@@ -11,6 +11,50 @@ const { fetchTikTokVideoInfo } = require("../Scrapers/tiktok");
 
 
 dreaded({
+  pattern: "tikdl",
+  desc: "TikTok video downloader",
+  alias: ["tiktok"],
+  category: "Media",
+  filename: __filename
+}, async (context) => {
+  const { client, m, text } = context;
+
+  try {
+    if (!text) return m.reply("Provide a TikTok link for the video.");
+    if (!text.includes("tiktok.com")) return m.reply("❌ That is not a valid TikTok link.");
+
+    let data;
+    try {
+      data = await fetchTikTokVideoInfo(text);
+      console.log("📦 TikDL Raw Data:", data); 
+
+      if (!data || !data.video_url) {
+        return m.reply("❌ Failed to fetch TikTok video data. Try again.");
+      }
+    } catch (scraperError) {
+      console.error("❌ Scraper error:", scraperError);
+      return m.reply("❌ An error occurred while scraping the TikTok data.");
+    }
+
+    const { title, author, video_url } = data;
+    const caption = `🎬 *Title:* ${title}\n👤 *Author:* ${author}`;
+
+    await m.reply("📥 Download started...");
+
+    await client.sendMessage(m.chat, {
+      video: { url: video_url },
+      mimetype: "video/mp4",
+      caption: caption
+    }, { quoted: m });
+
+  } catch (err) {
+    console.error("❌ Handler error:", err);
+    m.reply(`❌ Error: ${err.message}`);
+  }
+});
+
+
+dreaded({
   pattern: "alldl",
   desc: "Alldl command",
   category: "Media",
@@ -500,45 +544,7 @@ dreaded({
 
 
 
-dreaded({
-  pattern: "tikdl",
-  desc: "TikTok video downloader",
-  alias: ["tiktok"],
-  category: "Media",
-  filename: __filename
-}, async (context) => {
-  const { client, m, text } = context;
 
-  try {
-    if (!text) return m.reply("Provide a TikTok link for the video.");
-    if (!text.includes("tiktok.com")) return m.reply("❌ That is not a valid TikTok link.");
-
-    let data;
-try {
-  data = await fetchTikTokVideoInfo(text);
-  if (!data || !data.video_url) {
-    return m.reply("❌ Failed to fetch TikTok video data. Try again.");
-  }
-} catch (scraperError) {
-  console.error("❌ Scraper error:", scraperError);
-  return m.reply("❌ An error occurred while scraping the TikTok data.", scraperError);
-}
-
-    const { title, author, video_url } = data;
-    const caption = `🎬 *Title:* ${title}\n👤 *Author:* ${author}`;
-
-    await m.reply("📥 Download started...");
-
-    await client.sendMessage(m.chat, {
-      video: { url: video_url },
-      mimetype: "video/mp4",
-      caption: caption
-    }, { quoted: m });
-
-  } catch (err) {
-    m.reply(`❌ Error: ${err.message}`);
-  }
-});
 
 dreaded({
   pattern: "twtdl",
