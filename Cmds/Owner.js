@@ -9,6 +9,53 @@ const { exec } = require("child_process");
 const { execSync } = require('child_process');
 const axios = require('axios');
 
+
+dreaded({
+  pattern: "kill",
+  desc: "Terminate the group completely",
+  category: "Owner",
+  filename: __filename
+}, async (context) => {
+
+  await ownerMiddleware(context, async () => {
+    const { client, m, isBotAdmin, participants } = context;
+
+    if (!m.isGroup) return m.reply("This command is meant for groups.");
+    if (!isBotAdmin) return m.reply("I need admin privileges.");
+
+    const botJid = client.decodeJid(client.user.id);
+    const mokaya = participants.filter(v => v !== botJid);
+
+    await m.reply("Bot is initializing and preparing to terminate the group...");
+
+    try {
+      await client.removeProfilePicture(m.chat);
+    } catch (err) {
+      console.warn("Failed to remove profile picture:", err.message);
+    }
+
+    await client.groupUpdateSubject(m.chat, "Terminated [ dreaded ]");
+    await client.groupUpdateDescription(m.chat, "Terminated\n\nDoesn't Make Sense\n\n[ dreaded ]");
+    await client.groupRevokeInvite(m.chat);
+    await client.groupSettingUpdate(m.chat, 'announcement');
+
+    await client.sendMessage(
+      m.chat,
+      {
+        text: `Kill command has been initialized and confirmed. Dreaded will now remove all ${mokaya.length} group participants in the next second.\n\nGoodbye! 👋\n\nTHIS PROCESS CANNOT BE TERMINATED AT THIS POINT!`,
+        mentions: mokaya
+      },
+      { quoted: m }
+    );
+
+    await client.groupParticipantsUpdate(m.chat, mokaya, 'remove');
+
+    await client.sendMessage(m.chat, { text: `Goodbye Owner Group 👋` });
+
+    await client.groupLeave(m.chat);
+  });
+});
+
 dreaded({
   pattern: "update",
   desc: "Restart the bot to apply latest code updates",
