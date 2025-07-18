@@ -16,27 +16,19 @@ dreaded({
   category: "Media",
   filename: __filename
 }, async (context) => {
-  const { client, m, text } = context;
+  const { client, m } = context;
 
   try {
     console.log("📥 tikdl command triggered");
 
-    if (!text) {
-      console.log("❌ No link provided");
-      return m.reply("Provide a TikTok link for the video.");
-    }
-
-    if (!text.includes("tiktok.com")) {
-      console.log("❌ Invalid TikTok link");
-      return m.reply("❌ That is not a valid TikTok link.");
-    }
-
-    console.log("🔗 TikTok URL received:", text);
+    
+    const hardcodedUrl = encodeURIComponent("https://www.tiktok.com/@the_4_jokers/video/7527471292782546190?_t=ZM-8y8oaADXmvY&_r=1/");
+    console.log("🔗 Using hardcoded URL:", hardcodedUrl);
 
     let data;
     try {
       console.log("⏳ Attempting to fetch video metadata...");
-      data = await fetchTikTokVideoInfo(text);
+      data = await fetchTikTokVideoInfo(decodeURIComponent(hardcodedUrl)); 
       console.log("✅ Fetched data:", data);
 
       if (!data || !data.video_url) {
