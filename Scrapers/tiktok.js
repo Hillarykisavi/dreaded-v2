@@ -1,56 +1,50 @@
 const axios = require("axios");
+const cheerio = require("cheerio");
 
 /**
- * Fetches TikTok video metadata (title, video URL, etc.)
- * @param {string} url TikTok video URL
- * @returns {Promise<object|null>} Parsed metadata or null on failure
+ * Fetches video and audio download links from a TikTok URL using SSSTik
+ * @param {string} tiktokUrl - The TikTok video URL
+ * @returns {Promise<{ success: boolean, videoUrl: string|null, audioUrl: string|null, links: string[] }>}
  */
-async function fetchTikTokVideoInfo(url) {
+async function fetchTikTokMedia(tiktokUrl) {
   try {
-    const response = await axios.post(
-      "https://tikdl.io/api.php",
-      {
-        videolr1: url,
-        videoUrl: url,
-      },
-      {
-        headers: {
-          Host: "tikdl.io",
-          Connection: "keep-alive",
-          Accept: "*/*",
-          "Accept-Encoding": "gzip, deflate, br",
-          "Accept-Language": "en-GB,en-US;q=0.9,en;q=0.8",
-          "Cache-Control": "no-cache",
-          "Content-Type": "application/json",
-          Origin: "https://tikdl.io",
-          Pragma: "no-cache",
-          Referer: "https://tikdl.io/",
-          "Sec-Ch-Ua": '"Chromium";v="137", "Not/A)Brand";v="24"',
-          "Sec-Ch-Ua-Mobile": "?1",
-          "Sec-Ch-Ua-Platform": '"Android"',
-          "Sec-Fetch-Dest": "empty",
-          "Sec-Fetch-Mode": "cors",
-          "Sec-Fetch-Site": "same-origin",
-          "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0 Mobile Safari/537.36",
-        },
-      }
-    );
+    const form = new URLSearchParams();
+    form.append("id", tiktokUrl);
+    form.append("locale", "en");
+    form.append("tt", "QkZ3dnE5"); // static or dynamic depending on sssTik behavior
 
-    const data = response.data;
-    if (!data || !data.success || !data.video_url) return null;
+    const { data: html } = await axios.post("https://ssstik.io/abc", form, {
+      headers: {
+        "content-type": "application/x-www-form-urlencoded",
+        "origin": "https://ssstik.io",
+        "referer": "https://ssstik.io/",
+        "user-agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/122.0.0.0 Safari/537.36",
+      },
+    });
+
+    const $ = cheerio.load(html);
+    const links = [];
+
+    $("a[href^='https://tikcdn.io/ssstik/']").each((_, el) => {
+      const link = $(el).attr("href");
+      if (link) links.push(link);
+    });
 
     return {
-      title: data.title,
-      author: data.author,
-      duration: data.duration,
-      views: data.views,
-      video_url: data.video_url,
-      audio_url: data.audio_url,
-      thumbnail: data.thumbnail,
+      success: links.length > 0,
+      videoUrl: links[0] || null,
+      audioUrl: links[1] || null,
+      links,
     };
   } catch {
-    return null;
+    return {
+      success: false,
+      videoUrl: null,
+      audioUrl: null,
+      links: [],
+    };
   }
 }
 
-module.exports = fetchTikTokVideoInfo;
+module.exports = fetchTikTokMedia;
