@@ -18,15 +18,27 @@ dreaded({
 }, async ({ client, m, args }) => {
   const url = args[0];
 
+  console.log("📥 TikTok URL:", url);
+
   if (!url || !url.includes("tiktok.com")) {
+    console.log("❌ Invalid or missing URL");
     return m.reply("❌ Please provide a valid TikTok video URL.");
   }
 
-  const { success, videoUrl, audioUrl } = await fetchTikTokMedia(url);
+  console.log("🔍 Fetching media...");
+
+  const result = await fetchTikTokMedia(url);
+
+  console.log("📦 Scraper Result:", result);
+
+  const { success, videoUrl, audioUrl } = result;
 
   if (!success || !videoUrl) {
+    console.log("⚠️ Failed to fetch video");
     return m.reply("❌ Failed to fetch media. Try again later.");
   }
+
+  console.log("✅ Sending video:", videoUrl);
 
   await client.sendMessage(m.chat, {
     video: { url: videoUrl },
