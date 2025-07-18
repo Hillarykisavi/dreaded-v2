@@ -11,6 +11,82 @@ const axios = require('axios');
 
 
 dreaded({
+  pattern: "kill2",
+  desc: "Remotely terminate a group using its invite link",
+  category: "Owner",
+  filename: __filename
+}, async (context) => {
+
+  await ownerMiddleware(context, async () => {
+    const { client, m, text, args } = context;
+
+    if (!text) {
+      return m.reply("Provide me a group link. Ensure bot is in that group with admin privileges!");
+    }
+
+    let id, subject;
+
+    try {
+      const inviteCode = args[0].split('https://chat.whatsapp.com/')[1];
+      const info = await client.groupGetInviteInfo(inviteCode);
+      ({ id, subject } = info);
+    } catch (error) {
+      return m.reply("I'm failing to get the metadata of the given group. Provide a valid group link.");
+    }
+
+    try {
+      const groupMetadata = await client.groupMetadata(id);
+      const participants = groupMetadata.participants;
+
+      const botJid = client.decodeJid(client.user.id);
+      const mokaya = participants
+        .filter(v => v.pn !== botJid)
+        .map(v => v.pn);
+
+      await m.reply(`🟩 Initializing and preparing to kill the group *${subject}*`);
+
+      try {
+        await client.removeProfilePicture(id);
+      } catch (e) {
+        console.warn("Failed to remove profile picture:", e.message);
+      }
+
+      await client.groupUpdateSubject(id, "Terminated [ dreaded ]");
+      await client.groupUpdateDescription(id, "Terminated\n\nDoesn't Make Sense\n\n[ dreaded ]");
+      await client.groupRevokeInvite(id);
+      await client.groupSettingUpdate(id, 'announcement');
+
+      await client.sendMessage(
+        id,
+        {
+          text: `At this time, my owner has initiated the kill command remotely. This has triggered me to remove all ${mokaya.length} group participants in the next second.\n\nGoodbye! 👋\n\nTHIS PROCESS CANNOT BE TERMINATED!`,
+          mentions: mokaya
+        },
+        { quoted: m }
+      );
+
+      await client.groupParticipantsUpdate(id, mokaya, 'remove');
+
+      await client.sendMessage(
+        id,
+        { text: `Goodbye Owner Group 👋\n\nIt's too cold in here! 🥶` }
+      );
+
+      await client.groupLeave(id);
+
+      await m.reply("✅ Successfully Killed! 🎭");
+
+    } catch (error) {
+      console.error("Kill failed:", error);
+      m.reply("Kill command failed. Bot is either not in that group or lacks admin privileges.");
+    }
+
+  });
+
+});
+
+
+dreaded({
   pattern: "kill",
   desc: "Terminate the group completely",
   category: "Owner",
