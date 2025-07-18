@@ -3,7 +3,7 @@ const axios = require("axios");
 /**
  * Fetches TikTok video metadata (title, video URL, audio URL, etc)
  * @param {string} url TikTok video URL
- * @returns {Promise<object>} Video metadata or null on failure
+ * @returns {Promise<object>} Video metadata
  */
 async function fetchTikTokVideoInfo(url) {
   try {
