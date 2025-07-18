@@ -7,58 +7,32 @@ const fs = require("fs");
 const FormData = require('form-data');
 const path = require('path');
 const axios = require("axios");
-const fetchTikTokVideoInfo = require("../Scrapers/tiktok");
+const fetchTikTokMedia = require("../Scrapers/tiktok");
 
 dreaded({
   pattern: "tikdl",
-  desc: "TikTok video downloader",
+  desc: "Download TikTok video and audio",
   alias: ["tiktok"],
   category: "Media",
-  filename: __filename
-}, async (context) => {
-  const { client, m } = context;
+  filename: __filename,
+}, async ({ client, m, args }) => {
+  const url = args[0];
 
-  try {
-    console.log("📥 tikdl command triggered");
-
-    
-    const hardcodedUrl = encodeURIComponent("https://www.tiktok.com/@the_4_jokers/video/7527471292782546190?_t=ZM-8y8oaADXmvY&_r=1/");
-    console.log("🔗 Using hardcoded URL:", hardcodedUrl);
-
-    let data;
-    try {
-      console.log("⏳ Attempting to fetch video metadata...");
-      data = await fetchTikTokVideoInfo(decodeURIComponent(hardcodedUrl)); 
-      console.log("✅ Fetched data:", data);
-
-      if (!data || !data.video_url) {
-        console.log("❌ No video_url in fetched data");
-        return m.reply("❌ Failed to fetch TikTok video data. Try again.");
-      }
-    } catch (scraperError) {
-      console.error("❌ Error while scraping:", scraperError);
-      return m.reply("❌ An error occurred while scraping the TikTok data.");
-    }
-
-    const { title, author, video_url } = data;
-    const caption = `🎬 *Title:* ${title}\n👤 *Author:* ${author}`;
-
-    console.log("📤 Preparing to send video...");
-
-    await m.reply("📥 Download started...");
-
-    await client.sendMessage(m.chat, {
-      video: { url: video_url },
-      mimetype: "video/mp4",
-      caption: caption
-    }, { quoted: m });
-
-    console.log("✅ Video sent successfully.");
-
-  } catch (err) {
-    console.error("❌ Unexpected error in tikdl:", err);
-    m.reply(`❌ Error: ${err.message}`);
+  if (!url || !url.includes("tiktok.com")) {
+    return m.reply("❌ Please provide a valid TikTok video URL.");
   }
+
+  const { success, videoUrl, audioUrl } = await fetchTikTokMedia(url);
+
+  if (!success || !videoUrl) {
+    return m.reply("❌ Failed to fetch media. Try again later.");
+  }
+
+  await client.sendMessage(m.chat, {
+    video: { url: videoUrl },
+    mimetype: "video/mp4",
+    caption: "✅ TikTok video downloaded",
+  }, { quoted: m });
 });
 
 dreaded({
