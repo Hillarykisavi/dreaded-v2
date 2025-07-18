@@ -7,7 +7,7 @@ const fs = require("fs");
 const FormData = require('form-data');
 const path = require('path');
 const axios = require("axios");
-const { fetchTikTokVideoInfo } = require("../Scrapers/tiktok");
+const fetchTikTokVideoInfo = require("../Scrapers/tiktok");
 
 dreaded({
   pattern: "tikdl",
@@ -27,41 +27,40 @@ dreaded({
     }
 
     if (!text.includes("tiktok.com")) {
-      console.log("❌ Invalid TikTok link");
+     
       return m.reply("❌ That is not a valid TikTok link.");
     }
 
-    console.log("🔗 TikTok URL received:", text);
+    
 
     let data;
     try {
-      console.log("📡 Calling fetchTikTokVideoInfo...");
+      
       data = await fetchTikTokVideoInfo(text);
-      console.log("📦 TikDL Raw Data:", data);
+     
 
       if (!data || !data.video_url) {
-        console.log("❌ Data missing or no video_url");
+     
         return m.reply("❌ Failed to fetch TikTok video data. Try again.");
       }
     } catch (scraperError) {
-      console.error("❌ Scraper error:", scraperError);
+   
       return m.reply("❌ An error occurred while scraping the TikTok data.");
     }
 
     const { title, author, video_url } = data;
     const caption = `🎬 *Title:* ${title}\n👤 *Author:* ${author}`;
 
-    console.log("✅ Data parsed. Sending download started...");
+    
     await m.reply("📥 Download started...");
 
-    console.log("🎬 Sending video to user...");
     await client.sendMessage(m.chat, {
       video: { url: video_url },
       mimetype: "video/mp4",
       caption: caption
     }, { quoted: m });
 
-    console.log("✅ Video sent successfully");
+  
 
   } catch (err) {
     console.error("❌ Unexpected error in tikdl:", err);
