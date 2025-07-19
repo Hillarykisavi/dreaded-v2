@@ -18,7 +18,7 @@ async function fetchIgMp4(instagramUrl) {
     ts: Date.now(),
     _ts: Date.now() - 600000,
     _tsc: 0,
-    _s: "5cfe24caca9b21e6c29e50fad53bbac4" // static token (unless dynamic)
+    _s: "5cfe24caca9b21e6c29e50fad53bbac4"
   };
 
   try {
