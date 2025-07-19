@@ -9,7 +9,6 @@ const path = require('path');
 const axios = require("axios");
 const fetchTikTokInfo = require("../Scrapers/tiktok");
 const ytdownload = require("../Scrapers/ytdownload");
-const yts = require("yt-search");
 const { tmpdir } = require("os");
 
 dreaded({
