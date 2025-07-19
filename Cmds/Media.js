@@ -11,6 +11,58 @@ const fetchTikTokInfo = require("../Scrapers/tiktok");
 const ytdownload = require("../Scrapers/ytdownload");
 const { tmpdir } = require("os");
 
+
+dreaded({
+  pattern: "video",
+  desc: "Video command",
+  category: "Media",
+  filename: __filename
+}, async (context) => {
+  const { client, m, text } = context;
+
+  if (!text) {
+    return m.reply("Please provide a song name!");
+  }
+
+  try {
+    console.log("🔍 Searching YouTube for:", text);
+    const { videos } = await yts(text);
+
+    if (!videos || videos.length === 0) {
+      console.log("❌ No videos found.");
+      throw new Error("No songs found!");
+    }
+
+    const song = videos[0];
+    console.log("✅ Top video found:", song.title);
+    console.log("🎯 YouTube URL:", song.url);
+
+    console.log("⚙️  Scraping download links...");
+    const result = await ytdownload(song.url);
+    console.log("🔎 Scraper result:", result);
+
+    const { mp4 } = result || {};
+
+    if (!mp4) {
+      console.log("❌ Failed to retrieve video link.");
+      throw new Error("Failed to fetch download link.");
+    }
+
+    console.log("📦 Sending video:", mp4);
+    await client.sendMessage(m.chat, {
+      video: { url: mp4 },
+      mimetype: "video/mp4",
+      fileName: `${song.title}.mp4`
+    }, { quoted: m });
+
+    console.log("✅ Video sent successfully.");
+
+  } catch (error) {
+    console.error("❗ Error in video command:", error.message);
+    return m.reply("Download failed: " + error.message);
+  }
+});
+
 dreaded({
   pattern: "tikdl",
   desc: "Download TikTok video and audio",
@@ -680,42 +732,7 @@ alias: ["url", "tourl"],
 
 
 
-dreaded({
-  pattern: "video",
-  desc: "Video command",
-  category: "Media",
-  filename: __filename
-}, async (context) => {
-  const { client, m, text } = context;
 
-  if (!text) {
-    return m.reply("Please provide a song name!");
-  }
-
-  try {
-    const { videos } = await yts(text);
-    if (!videos || videos.length === 0) {
-      throw new Error("No songs found!");
-    }
-
-    const song = videos[0];
-    const { mp4 } = await ytdownload(song.url);
-
-    if (!mp4) {
-      throw new Error("Failed to fetch download link.");
-    }
-
-    await client.sendMessage(m.chat, {
-      video: { url: mp4 },
-      mimetype: "video/mp4",
-      fileName: `${song.title}.mp4`
-    }, { quoted: m });
-
-  } catch (error) {
-    console.error("Error in video command:", error.message);
-    return m.reply("Download failed: " + error.message);
-  }
-});
 
 
 dreaded({
