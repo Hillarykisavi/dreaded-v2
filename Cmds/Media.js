@@ -19,31 +19,48 @@ dreaded({
 }, async ({ client, m, args }) => {
   const url = args[0];
 
+  console.log("📥 Received TikTok command");
+  console.log("➡️ URL provided:", url);
+
   if (!url || !url.includes("tiktok.com")) {
+    console.warn("⚠️ Invalid or missing TikTok URL");
     return m.reply("❌ Please provide a valid TikTok video URL.");
   }
 
+  console.log("🔍 Fetching TikTok metadata...");
   const result = await fetchTikTokInfo(url);
+  console.log("📦 Scraper response:", result);
+
   const { success, mp4, title } = result;
 
   if (!success || !mp4) {
+    console.error("❌ Scraper failed or missing video link");
     return m.reply("❌ Failed to fetch media. Try again later.");
   }
 
   try {
+    console.log("⬇️ Downloading video from:", mp4);
     const response = await axios.get(mp4, {
       responseType: "stream",
     });
 
     const filePath = path.join(tmpdir(), `tiktok_${Date.now()}.mp4`);
     const writer = fs.createWriteStream(filePath);
+    console.log("📂 Saving to temp file:", filePath);
 
     await new Promise((resolve, reject) => {
       response.data.pipe(writer);
-      writer.on("finish", resolve);
-      writer.on("error", reject);
+      writer.on("finish", () => {
+        console.log("✅ Download finished");
+        resolve();
+      });
+      writer.on("error", (err) => {
+        console.error("❌ Stream error:", err);
+        reject(err);
+      });
     });
 
+    console.log("📤 Sending video to user...");
     await client.sendMessage(m.chat, {
       video: fs.readFileSync(filePath),
       mimetype: "video/mp4",
@@ -51,7 +68,9 @@ dreaded({
     }, { quoted: m });
 
     fs.unlinkSync(filePath);
+    console.log("🧹 Temp file deleted:", filePath);
   } catch (err) {
+    console.error("❌ Error while downloading or sending video:", err.message || err);
     m.reply("❌ Failed to send the video.");
   }
 });
