@@ -11,6 +11,8 @@ const fetchTikTokInfo = require("../Scrapers/tiktok");
 const ytdownload = require("../Scrapers/ytdownload");
 const { tmpdir } = require("os");
 const downloadVideo = require('../Scrapers/ytdownload2');
+const { downloadFromSSSTwitter } = require('../Scrapers/twitter');
+
 
 
 dreaded({
@@ -632,40 +634,50 @@ dreaded({
 
 
 
+
 dreaded({
   pattern: "twtdl",
   desc: "Twtdl command",
-alias: ["twitter"],
+  alias: ["twitter"],
   category: "Media",
   filename: __filename
 }, async (context) => {
+  const { client, m, text, botname } = context;
+
+  if (!text) return m.reply("📝 Please provide a valid Twitter or X video link.");
+
   
-  
-  const { client, m, text, botname, fetchJson } = context;
-  
-  if (!text) return m.reply("Provide a twitter or X link for the video");
-  
-  
-  
+  const isTwitterLink = /^(https?:\/\/)?(www\.)?(twitter\.com|x\.com)\/[A-Za-z0-9_]+\/status\/\d+/.test(text.trim());
+
+  if (!isTwitterLink) {
+    return m.reply("⚠️ That doesn't look like a valid Twitter or X video link.");
+  }
+
   try {
-  
-  const data = await fetchJson(`https://api.dreaded.site/api/alldl?url=${text}`);
-  
-  
-  if (!data || data.status !== 200 || !data.data || !data.data.videoUrl) {
-              return m.reply("We are sorry but the API endpoint didn't respond correctly. Try again later.");
-          }
-  
-  
-  
-  const twtvid = data.data.videoUrl;
-  
-  await client.sendMessage(m.chat,{video : {url : twtvid },caption : `Downloaded by ${botname}`,gifPlayback : false },{quoted : m}) 
-  
-  } catch (e) {
-  
-  m.reply("An error occured. API might be down\n" + e)
-  
+    const result = await downloadFromSSSTwitter(text);
+
+    if (!result) {
+      return m.reply("❌ Failed to extract video. The tweet might not contain a supported video.");
+    }
+
+    const videoUrl = result.mp4high || result.mp4mid || result.mp4low;
+
+    if (!videoUrl) {
+      return m.reply("❌ Couldn't find a valid download link. Twitter might have changed something.");
+    }
+
+    await client.sendMessage(
+      m.chat,
+      {
+        video: { url: videoUrl },
+        caption: `🎬 Video downloaded via ${botname}`,
+        gifPlayback: false
+      },
+      { quoted: m }
+    );
+  } catch (err) {
+    console.error("TWTDL error:", err);
+    m.reply("⚠️ An error occurred while downloading the video:\n" + err.message);
   }
 });
 
