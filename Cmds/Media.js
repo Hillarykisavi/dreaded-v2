@@ -14,6 +14,39 @@ const downloadVideo = require('../Scrapers/ytdownload2');
 const { downloadFromSSSTwitter } = require('../Scrapers/twitter');
 const { Readable } = require("stream");
 
+const fetchIgMp4 = require("../Scrapers/instagram");
+
+dreaded({
+  pattern: "igdl",
+  desc: "Instagram video downloader",
+  alias: ["ig", "instagram"],
+  category: "Media",
+  filename: __filename
+}, async (context) => {
+  const { client, m, text, botname } = context;
+
+  if (!text) return m.reply("📝 Provide an Instagram Reel or Post URL!");
+  if (!/instagram\.com\/(reel|p|tv)\//i.test(text)) return m.reply(" Invalid Instagram link!");
+
+  try {
+    const result = await fetchIgMp4(text);
+    if (result.error || !result.igmp4) return m.reply(" Failed to extract video.");
+
+    await client.sendMessage(
+      m.chat,
+      {
+        video: { url: result.igmp4 },
+        caption: `Downloaded via ${botname}`
+      },
+      { quoted: m }
+    );
+
+  } catch (err) {
+    console.error("IGDL Error:", err);
+    m.reply(` Error: ${err.message}`);
+  }
+});
+
 
 dreaded({
   pattern: "twtdl",
