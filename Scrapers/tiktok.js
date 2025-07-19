@@ -2,11 +2,6 @@ const axios = require("axios");
 const qs = require("qs");
 const cheerio = require("cheerio");
 
-/**
- * Fetches TikTok metadata and download links from TikSave
- * @param {string} videoUrl - TikTok video URL
- * @returns {Promise<{ success: boolean, title?: string, mp4?: string, mp3?: string, error?: string }>}
- */
 async function fetchTikTokInfo(videoUrl) {
   try {
     const payload = qs.stringify({ q: videoUrl });
