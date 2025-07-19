@@ -10,56 +10,58 @@ const axios = require("axios");
 const fetchTikTokInfo = require("../Scrapers/tiktok");
 const ytdownload = require("../Scrapers/ytdownload");
 const { tmpdir } = require("os");
-
+const downloadVideo = require('../Scrapers/ytdownload2');
 
 dreaded({
   pattern: "video",
-  desc: "Video command",
+  desc: "Download YouTube video (with fallback)",
   category: "Media",
   filename: __filename
 }, async (context) => {
   const { client, m, text } = context;
 
   if (!text) {
-    return m.reply("Please provide a song name!");
+    return m.reply("Please provide a video name!");
   }
 
   try {
-    console.log("🔍 Searching YouTube for:", text);
     const { videos } = await yts(text);
-
     if (!videos || videos.length === 0) {
-      console.log("❌ No videos found.");
-      throw new Error("No songs found!");
+      return m.reply("❌ No videos found.");
     }
 
-    const song = videos[0];
-    console.log("✅ Top video found:", song.title);
-    console.log("🎯 YouTube URL:", song.url);
+    const video = videos[0];
+    const url = video.url;
 
-    console.log("⚙️  Scraping download links...");
-    const result = await ytdownload(song.url);
-    console.log("🔎 Scraper result:", result);
+    await m.reply("⏳ Getting download link...");
 
-    const { mp4 } = result || {};
+    let mp4 = null;
+    try {
+      const result = await ytdownload(url);
+      mp4 = result?.mp4;
+    } catch (e) {}
 
-    if (!mp4) {
-      console.log("❌ Failed to retrieve video link.");
-      throw new Error("Failed to fetch download link.");
+    if (mp4) {
+      await client.sendMessage(m.chat, {
+        video: { url: mp4 },
+        mimetype: "video/mp4",
+        fileName: `${video.title}.mp4`
+      }, { quoted: m });
+    } else {
+      await m.reply("Failed... retrying....");
+      const filePath = await downloadVideo(url, '360p');
+
+      await client.sendMessage(m.chat, {
+        video: fs.readFileSync(filePath),
+        mimetype: "video/mp4",
+        fileName: `${video.title}.mp4`
+      }, { quoted: m });
+
+      fs.unlinkSync(filePath);
     }
 
-    console.log("📦 Sending video:", mp4);
-    await client.sendMessage(m.chat, {
-      video: { url: mp4 },
-      mimetype: "video/mp4",
-      fileName: `${song.title}.mp4`
-    }, { quoted: m });
-
-    console.log("✅ Video sent successfully.");
-
-  } catch (error) {
-    console.error("❗ Error in video command:", error.message);
-    return m.reply("Download failed: " + error.message);
+  } catch (err) {
+    return m.reply("❌ Download failed: " + err);
   }
 });
 
