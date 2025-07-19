@@ -24,9 +24,9 @@ dreaded({
   }
 
   const result = await fetchTikTokInfo(url);
-  const { success, mp4, title } = result;
+  const { mp4, title } = result;
 
-  if (!success || !mp4) {
+  if (!mp4) {
     return m.reply("❌ Failed to fetch media. Try again later.");
   }
 
@@ -488,9 +488,9 @@ dreaded({
   }
 
   const result = await fetchTikTokInfo(url);
-  const { success, mp3, title } = result;
+  const { mp3, title } = result;
 
-  if (!success || !mp3) {
+  if (!mp3) {
     return m.reply("❌ Failed to fetch audio. Try again later.");
   }
 
