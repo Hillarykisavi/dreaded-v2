@@ -1,27 +1,37 @@
 const axios = require("axios");
 
 const endpoint = "https://iloveyt.net/proxy.php";
+
+
 async function ytdownload(videoUrl) {
   try {
     const res = await axios.post(endpoint, new URLSearchParams({ url: videoUrl }), {
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
-        "User-Agent": "Mozilla/5.0",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/114.0.0.0 Safari/537.36",
+        "Referer": "https://iloveyt.net/en47/",
+        "Origin": "https://iloveyt.net",
       },
     });
 
-    const api = res.data;
-    if (!api || !Array.isArray(api.mediaItems)) {
+    // Check if API response is valid
+    if (!res.data?.api || res.data.api?.status !== "OK") {
       return { mp3: null, mp4: null };
     }
 
+    const api = res.data.api;
+    
+    if (!Array.isArray(api.mediaItems)) {
+      return { mp3: null, mp4: null };
+    }
+    
     const audioItems = api.mediaItems.filter(
       item => item.mediaExtension?.toUpperCase() === "M4A"
     );
     const videoItems = api.mediaItems.filter(
       item => item.mediaExtension?.toUpperCase() === "MP4"
     );
-
+    
     const audio128 = audioItems.find(item => item.mediaQuality === "128K");
     const video360 = videoItems.find(item => item.mediaRes === "640x360");
 
@@ -39,7 +49,8 @@ async function ytdownload(videoUrl) {
     }
 
     return { mp3, mp4 };
-  } catch {
+  } catch (error) {
+    console.error("YouTube download error:", error.message);
     return { mp3: null, mp4: null };
   }
 }
