@@ -48,12 +48,8 @@ dreaded({
         fileName: `${video.title}.mp4`
       }, { quoted: m });
     } else {
-      console.log("⚠️ Falling back to ytmp4.fit method...");
-      console.log("🔗 URL:", url);
-
+      await m.reply("⚠️ Fast method failed. Downloading video, please wait...");
       const filePath = await downloadVideo(url, '360p');
-
-      console.log("📥 Video downloaded to:", filePath);
 
       await client.sendMessage(m.chat, {
         video: fs.readFileSync(filePath),
@@ -61,11 +57,7 @@ dreaded({
         fileName: `${video.title}.mp4`
       }, { quoted: m });
 
-      console.log("✅ Video sent. Cleaning up...");
-
       fs.unlinkSync(filePath);
-
-      console.log("🧹 Temp file deleted.");
     }
 
   } catch (err) {
