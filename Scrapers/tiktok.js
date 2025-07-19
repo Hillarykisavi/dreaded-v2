@@ -1,50 +1,45 @@
+
 const axios = require("axios");
-const cheerio = require("cheerio");
+const qs = require("qs");
 
 /**
- * Fetches video and audio download links from a TikTok URL using SSSTik
- * @param {string} tiktokUrl - The TikTok video URL
- * @returns {Promise<{ success: boolean, videoUrl: string|null, audioUrl: string|null, links: string[] }>}
+ * Fetches metadata from TikSave (title, audio, HD video)
+ * @param {string} videoUrl - The TikTok video URL
+ * @returns {Promise<{success: boolean, title?: string, mp3?: string, mp4?: string, error?: string}>}
  */
-async function fetchTikTokMedia(tiktokUrl) {
+async function fetchTikTokInfo(videoUrl) {
   try {
-    const form = new URLSearchParams();
-    form.append("id", tiktokUrl);
-    form.append("locale", "en");
-    form.append("tt", "QkZ3dnE5"); // static or dynamic depending on sssTik behavior
-
-    const { data: html } = await axios.post("https://ssstik.io/abc", form, {
-      headers: {
-        "content-type": "application/x-www-form-urlencoded",
-        "origin": "https://ssstik.io",
-        "referer": "https://ssstik.io/",
-        "user-agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/122.0.0.0 Safari/537.36",
-      },
-    });
-
-    const $ = cheerio.load(html);
-    const links = [];
-
-    $("a[href^='https://tikcdn.io/ssstik/']").each((_, el) => {
-      const link = $(el).attr("href");
-      if (link) links.push(link);
-    });
-
-    return {
-      success: links.length > 0,
-      videoUrl: links[0] || null,
-      audioUrl: links[1] || null,
-      links,
+    const payload = qs.stringify({ q: videoUrl });
+    const headers = {
+      Accept: "*/*",
+      "Accept-Encoding": "gzip, deflate, br",
+      "Accept-Language": "en-GB,en-US;q=0.9,en;q=0.8",
+      "Cache-Control": "no-cache",
+      "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+      Origin: "https://tiksave.io",
+      Pragma: "no-cache",
+      Referer: "https://tiksave.io/en",
+      "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Mobile Safari/537.36",
+      "X-Requested-With": "XMLHttpRequest",
     };
-  } catch {
+
+    const res = await axios.post("https://tiksave.io/api/ajaxSearch", payload, { headers });
+    const json = res.data;
+
+    if (!json.status || !json.data) {
+      return { success: false, error: "Invalid response from TikSave" };
+    }
+
+    const { title, music, hdplay } = json.data;
     return {
-      success: false,
-      videoUrl: null,
-      audioUrl: null,
-      links: [],
+      success: true,
+      title,
+      mp3: music,
+      mp4: hdplay,
     };
+  } catch (err) {
+    return { success: false, error: err.message || "Unknown error" };
   }
 }
 
-module.exports = fetchTikTokMedia;
+module.exports = fetchTikTokInfo;
