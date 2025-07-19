@@ -435,8 +435,8 @@ dreaded({
 
 
 dreaded({
-  pattern: "play",
-  desc: "Play command",
+  pattern: "song",
+  desc: "download song as audio",
   category: "Media",
   filename: __filename
 }, async (context) => {
