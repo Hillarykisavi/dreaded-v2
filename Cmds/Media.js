@@ -14,6 +14,46 @@ const downloadVideo = require('../Scrapers/ytdownload2');
 
 
 dreaded({
+  pattern: "yts",
+  desc: "Search YouTube videos",
+  alias: ["ytsearch", "ytfind"],
+  category: "Media",
+  filename: __filename
+}, async (context) => {
+  const { client, m, text } = context;
+
+  if (!text) return m.reply("🔍 Please enter a search query, e.g. yts careless whisper");
+
+  try {
+    const results = await yts(text);
+    const videos = results?.videos?.slice(0, 5);
+
+    if (!videos || videos.length === 0) {
+      return m.reply("❌ No results found.");
+    }
+
+    const first = videos[0];
+
+    let caption = `🎬 Top YouTube Results:\n\n`;
+    videos.forEach((v, i) => {
+      caption += `*${i + 1}. ${v.title}*\n`;
+      caption += `⏱️ Duration: ${v.timestamp}\n`;
+      caption += `🔗 URL: ${v.url}\n\n`;
+    });
+
+    await client.sendMessage(m.chat, {
+      image: { url: first.thumbnail },
+      caption,
+    }, { quoted: m });
+
+  } catch (error) {
+    m.reply("❌ Failed to fetch search results.\n" + error.message);
+  }
+});
+
+
+
+dreaded({
   pattern: "play",
   desc: "Play command",
   category: "Media",
