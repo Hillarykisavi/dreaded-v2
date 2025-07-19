@@ -24,62 +24,37 @@ dreaded({
 }, async (context) => {
   const { client, m, text, botname } = context;
 
-  if (!text) return m.reply("📝 Please provide a valid Twitter or X video link.");
-
-  const isTwitterLink = /^(https?:\/\/)?(www\.)?(twitter\.com|x\.com)\/[A-Za-z0-9_]+\/status\/\d+/.test(text.trim());
-
-  if (!isTwitterLink) {
-    return m.reply("⚠️ That doesn't look like a valid Twitter or X video link.");
-  }
+  if (!text) return m.reply("📝 Provide a Twitter/X video link!");
+  if (!/x\.com|twitter\.com/.test(text)) return m.reply("❌ Invalid Twitter link!");
 
   try {
-    console.log("📡 Calling scraper...");
+    
     const result = await downloadFromSSSTwitter(text);
-
-    if (!result) {
-      return m.reply("❌ Failed to extract video. The tweet might not contain a supported video.");
-    }
-
     const videoUrl = result.mp4high || result.mp4mid || result.mp4low;
+    if (!videoUrl) return m.reply("❌ No video found in this tweet");
 
-    if (!videoUrl) {
-      return m.reply("❌ Couldn't find a valid download link.");
-    }
-
-    console.log("📥 Downloading video from:", videoUrl);
+  
     const response = await axios.get(videoUrl, {
-      responseType: "arraybuffer",
-      headers: {
-        "User-Agent": "Mozilla/5.0"
-      }
+      responseType: 'arraybuffer',
+      headers: { 'User-Agent': 'Mozilla/5.0' }
     });
 
-    const buffer = Buffer.from(response.data);
-
-    if (!buffer || buffer.length < 10000) {
-      return m.reply("⚠️ The video appears to be empty or incomplete.");
-    }
-
-    console.log("📤 Sending video...");
+   
     await client.sendMessage(
       m.chat,
-      {
-        video: Readable.from(buffer),
-        mimetype: "video/mp4",
-        fileName: "twitter.mp4",
-        caption: `🎬 Video downloaded via ${botname}`,
-        gifPlayback: false
+      { 
+        video: Buffer.from(response.data),
+        mimetype: 'video/mp4',
+        caption: `Downloaded via ${botname}`
       },
       { quoted: m }
     );
 
-    console.log("✅ Video sent successfully.");
   } catch (err) {
-    console.error("❌ TWTDL error:", err);
-    m.reply("⚠️ An error occurred while downloading the video:\n" + err.message);
+    console.error("TWTDL Error:", err);
+    m.reply(`⚠️ Failed: ${err.message}`);
   }
 });
-
 
 dreaded({
   pattern: "yts",
