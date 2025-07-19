@@ -7,8 +7,7 @@ const fs = require("fs");
 const FormData = require('form-data');
 const path = require('path');
 const axios = require("axios");
-const fetchTikTokMedia = require("../Scrapers/tiktok");
-
+const fetchTikTokInfo = require("../Scrapers/tiktok");
 const { tmpdir } = require("os");
 
 dreaded({
@@ -20,31 +19,24 @@ dreaded({
 }, async ({ client, m, args }) => {
   const url = args[0];
 
-  console.log("📥 TikTok URL:", url);
-
   if (!url || !url.includes("tiktok.com")) {
     return m.reply("❌ Please provide a valid TikTok video URL.");
   }
 
-  console.log("🔍 Fetching media...");
-  const result = await fetchTikTokMedia(url);
-  console.log("📦 Scraper Result:", result);
+  const result = await fetchTikTokInfo(url);
+  const { success, mp4, title } = result;
 
-  const { success, videoUrl } = result;
-
-  if (!success || !videoUrl) {
+  if (!success || !mp4) {
     return m.reply("❌ Failed to fetch media. Try again later.");
   }
 
   try {
-    const response = await axios.get(videoUrl, {
+    const response = await axios.get(mp4, {
       responseType: "stream",
     });
 
     const filePath = path.join(tmpdir(), `tiktok_${Date.now()}.mp4`);
     const writer = fs.createWriteStream(filePath);
-
-    console.log("⬇️ Downloading video to:", filePath);
 
     await new Promise((resolve, reject) => {
       response.data.pipe(writer);
@@ -52,19 +44,14 @@ dreaded({
       writer.on("error", reject);
     });
 
-    console.log("✅ Video downloaded. Sending...");
-
     await client.sendMessage(m.chat, {
       video: fs.readFileSync(filePath),
       mimetype: "video/mp4",
-      caption: "📤 TikTok video downloaded",
+      caption: `📤 ${title || "TikTok video downloaded"}`,
     }, { quoted: m });
 
-    fs.unlinkSync(filePath); // Clean up
-    console.log("🧹 Temp file deleted.");
-
+    fs.unlinkSync(filePath);
   } catch (err) {
-    console.error("❌ Error sending video:", err);
     m.reply("❌ Failed to send the video.");
   }
 });
