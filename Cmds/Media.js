@@ -48,8 +48,12 @@ dreaded({
         fileName: `${video.title}.mp4`
       }, { quoted: m });
     } else {
-      await m.reply("Failed... retrying....");
+      console.log("⚠️ Falling back to ytmp4.fit method...");
+      console.log("🔗 URL:", url);
+
       const filePath = await downloadVideo(url, '360p');
+
+      console.log("📥 Video downloaded to:", filePath);
 
       await client.sendMessage(m.chat, {
         video: fs.readFileSync(filePath),
@@ -57,13 +61,18 @@ dreaded({
         fileName: `${video.title}.mp4`
       }, { quoted: m });
 
+      console.log("✅ Video sent. Cleaning up...");
+
       fs.unlinkSync(filePath);
+
+      console.log("🧹 Temp file deleted.");
     }
 
   } catch (err) {
     return m.reply("❌ Download failed: " + err);
   }
 });
+
 
 dreaded({
   pattern: "tikdl",
