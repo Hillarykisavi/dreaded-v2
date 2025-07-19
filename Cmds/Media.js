@@ -24,37 +24,20 @@ dreaded({
   }
 
   const result = await fetchTikTokInfo(url);
-
   const { success, mp4, title } = result;
 
   if (!success || !mp4) {
     return m.reply("❌ Failed to fetch media. Try again later.");
   }
 
-  
-  await m.reply("📥 Downloading...");
+  m.reply("⬇️ Downloading...");
 
   try {
-    const response = await axios.get(mp4, {
-      responseType: "stream",
-    });
-
-    const filePath = path.join(tmpdir(), `tiktok_${Date.now()}.mp4`);
-    const writer = fs.createWriteStream(filePath);
-
-    await new Promise((resolve, reject) => {
-      response.data.pipe(writer);
-      writer.on("finish", resolve);
-      writer.on("error", reject);
-    });
-
     await client.sendMessage(m.chat, {
-      video: fs.readFileSync(filePath),
+      video: { url: mp4 },
       mimetype: "video/mp4",
       caption: `📤 ${title || "TikTok video downloaded"}`,
     }, { quoted: m });
-
-    fs.unlinkSync(filePath);
   } catch (err) {
     m.reply("❌ Failed to send the video.");
   }
@@ -492,9 +475,9 @@ dreaded({
 
 
 dreaded({
-  pattern: "tikdl",
-  desc: "Download TikTok video and audio",
-  alias: ["tiktok"],
+  pattern: "tikmp3",
+  desc: "Download TikTok audio only",
+  alias: ["tiktokaudio", "ttmp3"],
   category: "Media",
   filename: __filename,
 }, async ({ client, m, args }) => {
@@ -505,39 +488,23 @@ dreaded({
   }
 
   const result = await fetchTikTokInfo(url);
-
   const { success, mp3, title } = result;
 
   if (!success || !mp3) {
-    return m.reply("❌ Failed to fetch media. Try again later.");
+    return m.reply("❌ Failed to fetch audio. Try again later.");
   }
 
-  
-  await m.reply("📥 Downloading...");
+  m.reply("🎵 Sending audio...");
 
   try {
-    const response = await axios.get(mp3, {
-      responseType: "stream",
-    });
-
-    const filePath = path.join(tmpdir(), `tiktok_${Date.now()}.mp3`);
-    const writer = fs.createWriteStream(filePath);
-
-    await new Promise((resolve, reject) => {
-      response.data.pipe(writer);
-      writer.on("finish", resolve);
-      writer.on("error", reject);
-    });
-
     await client.sendMessage(m.chat, {
-      audio: fs.readFileSync(filePath),
-      mimetype: "audio/mp3",
-      caption: `📤 ${title || "TikTok video downloaded"}`,
+      audio: { url: mp3 },
+      mimetype: "audio/mpeg",
+      ptt: false,
+      fileName: `${title || "tiktok_audio"}.mp3`,
     }, { quoted: m });
-
-    fs.unlinkSync(filePath);
   } catch (err) {
-    m.reply("❌ Failed to send the video.");
+    m.reply("❌ Failed to send the audio.");
   }
 });
 
