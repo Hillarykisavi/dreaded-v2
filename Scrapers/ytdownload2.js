@@ -2,12 +2,7 @@ const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
 
-/**
- * Downloads a YouTube video from ytmp4.fit
- * @param {string} url - The YouTube video URL
- * @param {string} quality - Desired video quality (e.g., "360p")
- * @returns {Promise<string>} Path to downloaded video file
- */
+
 async function downloadVideo(url, quality) {
   try {
     const infoRes = await axios.post('https://api.ytmp4.fit/api/video-info', { url }, {
