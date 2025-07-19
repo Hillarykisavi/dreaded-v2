@@ -1,11 +1,7 @@
 const axios = require("axios");
 const qs = require("qs");
 
-/**
- * Fetch Instagram video download link from Snapins.ai
- * @param {string} instagramUrl - Instagram post/reel URL
- * @returns {Promise<{ igmp4: string } | { error: string }>}
- */
+
 async function fetchIgMp4(instagramUrl) {
   const formData = {
     sf_url: instagramUrl,
