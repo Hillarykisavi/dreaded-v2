@@ -12,7 +12,7 @@ const ytdownload = require("../Scrapers/ytdownload");
 const { tmpdir } = require("os");
 const downloadVideo = require('../Scrapers/ytdownload2');
 const { downloadFromSSSTwitter } = require('../Scrapers/twitter');
-
+const { Readable } = require("stream");
 
 dreaded({
   pattern: "twtdl",
@@ -23,48 +23,38 @@ dreaded({
 }, async (context) => {
   const { client, m, text, botname } = context;
 
-  console.log("🟡 Command invoked: twtdl");
-  console.log("🟢 Received text:", text);
+  if (!text) return m.reply("📝 Please provide a valid Twitter or X video link.");
 
-  if (!text) {
-    console.log("🔴 No URL provided.");
-    return m.reply("📝 Please provide a valid Twitter or X video link.");
-  }
-
+  console.log("🔎 Validating Twitter/X URL...");
   const isTwitterLink = /^(https?:\/\/)?(www\.)?(twitter\.com|x\.com)\/[A-Za-z0-9_]+\/status\/\d+/.test(text.trim());
 
-  console.log("🔍 Validating Twitter/X URL:", isTwitterLink);
-
   if (!isTwitterLink) {
-    console.log("❌ Invalid Twitter/X URL.");
     return m.reply("⚠️ That doesn't look like a valid Twitter or X video link.");
   }
 
   try {
-    console.log("📥 Calling downloadFromSSSTwitter()...");
+    console.log("📡 Calling scraper...");
     const result = await downloadFromSSSTwitter(text);
-    console.log("✅ Scraper result:", result);
 
     if (!result) {
-      console.log("❌ Scraper returned null or empty result.");
       return m.reply("❌ Failed to extract video. The tweet might not contain a supported video.");
     }
 
     const videoUrl = result.mp4high || result.mp4mid || result.mp4low;
 
-    console.log("🎯 Selected video URL:", videoUrl);
-
     if (!videoUrl) {
-      console.log("❌ No downloadable video URL found in result.");
       return m.reply("❌ Couldn't find a valid download link. Twitter might have changed something.");
     }
 
-    console.log("📤 Sending video to chat...");
+    console.log("📥 Downloading video from:", videoUrl);
+    const response = await axios.get(videoUrl, { responseType: "arraybuffer" });
+    const buffer = Buffer.from(response.data);
 
+    console.log("📤 Sending video...");
     await client.sendMessage(
       m.chat,
       {
-        video: { url: videoUrl },
+        video: Readable.from(buffer),
         caption: `🎬 Video downloaded via ${botname}`,
         gifPlayback: false
       },
@@ -72,13 +62,11 @@ dreaded({
     );
 
     console.log("✅ Video sent successfully.");
-
   } catch (err) {
     console.error("❌ TWTDL error:", err);
     m.reply("⚠️ An error occurred while downloading the video:\n" + err.message);
   }
 });
-
 
 dreaded({
   pattern: "yts",
