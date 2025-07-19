@@ -14,9 +14,10 @@ const downloadVideo = require('../Scrapers/ytdownload2');
 const { downloadFromSSSTwitter } = require('../Scrapers/twitter');
 const { Readable } = require("stream");
 
+
 dreaded({
   pattern: "twtdl",
-  desc: "Twtdl command",
+  desc: "Download Twitter/X video",
   alias: ["twitter"],
   category: "Media",
   filename: __filename
@@ -25,7 +26,6 @@ dreaded({
 
   if (!text) return m.reply("📝 Please provide a valid Twitter or X video link.");
 
-  console.log("🔎 Validating Twitter/X URL...");
   const isTwitterLink = /^(https?:\/\/)?(www\.)?(twitter\.com|x\.com)\/[A-Za-z0-9_]+\/status\/\d+/.test(text.trim());
 
   if (!isTwitterLink) {
@@ -43,18 +43,30 @@ dreaded({
     const videoUrl = result.mp4high || result.mp4mid || result.mp4low;
 
     if (!videoUrl) {
-      return m.reply("❌ Couldn't find a valid download link. Twitter might have changed something.");
+      return m.reply("❌ Couldn't find a valid download link.");
     }
 
     console.log("📥 Downloading video from:", videoUrl);
-    const response = await axios.get(videoUrl, { responseType: "arraybuffer" });
+    const response = await axios.get(videoUrl, {
+      responseType: "arraybuffer",
+      headers: {
+        "User-Agent": "Mozilla/5.0"
+      }
+    });
+
     const buffer = Buffer.from(response.data);
+
+    if (!buffer || buffer.length < 10000) {
+      return m.reply("⚠️ The video appears to be empty or incomplete.");
+    }
 
     console.log("📤 Sending video...");
     await client.sendMessage(
       m.chat,
       {
         video: Readable.from(buffer),
+        mimetype: "video/mp4",
+        fileName: "twitter.mp4",
         caption: `🎬 Video downloaded via ${botname}`,
         gifPlayback: false
       },
@@ -67,6 +79,7 @@ dreaded({
     m.reply("⚠️ An error occurred while downloading the video:\n" + err.message);
   }
 });
+
 
 dreaded({
   pattern: "yts",
