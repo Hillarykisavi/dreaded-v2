@@ -88,8 +88,9 @@ dreaded({
   desc: "Set online privacy (all/match_last_seen)",
   category: "Wa-Privacy",
   filename: __filename
-}, async ({ client, m, text }) => {
-  await ownerMiddleware({ client, m }, async () => {
+}, async (context) => {
+  await ownerMiddleware(context, async () => {
+    const { m, client } = context;
     await handlePrivacySetting({ client, m, text },
       (setting) => client.updateOnlinePrivacy(setting),
       'online'
@@ -103,8 +104,9 @@ dreaded({
   desc: "View current privacy settings",
   category: "Wa-Privacy",
   filename: __filename
-}, async ({ client, m }) => {
-  await ownerMiddleware({ client, m }, async () => {
+}, async (context) => {
+  await ownerMiddleware(context, async () => {
+    const { m, client } = context;
     const Myself = await client.decodeJid(client.user.id);
     const {
       readreceipts,
