@@ -83,8 +83,7 @@ const connectionHandler = async (client, update, startDreaded) => {
 
   if (connection === "open") {
 
-const res = await client.newsletterFollow('120363420158562302@newsletter');
-console.log(res);
+
 
     if (database) {
       console.log("📈 Connecting to PostgreSQL database...");
