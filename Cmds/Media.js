@@ -159,7 +159,7 @@ dreaded({
       await m.reply(`_Downloading ${song.title}_`);
       await client.sendMessage(m.chat, {
         document: { url: mp3 },
-        mimetype: "audio/mp3",
+        mimetype: "audio/mpeg",
         fileName: `${song.title}.mp3`
       }, { quoted: m });
     } else {
@@ -579,7 +579,7 @@ dreaded({
     if (mp3) {
       await m.reply(`_Downloading ${song.title}_`);
       await client.sendMessage(m.chat, {
-        document: { url: mp3 },
+        audio: { url: mp3 },
         mimetype: "audio/mp3",
         fileName: `${song.title}.mp3`
       }, { quoted: m });
