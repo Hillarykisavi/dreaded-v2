@@ -11,6 +11,44 @@ const axios = require('axios');
 
 
 dreaded({
+  pattern: "checkupdate",
+  desc: "Check if there's a new version of the bot and see what's changed",
+  category: "Owner",
+  filename: __filename
+}, async (context) => {
+  await ownerMiddleware(context, async () => {
+    const { m } = context;
+    const repo = "Fortunatusmokaya/dreaded-v2";
+    const botPath = require('path').join(__dirname, '..');
+
+    try {
+      const localCommit = require('child_process').execSync('git rev-parse HEAD', { cwd: botPath }).toString().trim();
+      const latestCommitRes = await require('axios').get(`https://api.github.com/repos/${repo}/commits/main`);
+      const latestCommit = latestCommitRes.data.sha;
+
+      if (localCommit === latestCommit) {
+        await m.reply(
+          `✅ No updates yet.\nYou're already using the **latest version** of DREADED-V2.\n\nIf you notice any bugs, contact the owner.`
+        );
+      } else {
+        const compareRes = await require('axios').get(`https://api.github.com/repos/${repo}/compare/${localCommit}...main`);
+        const filesChanged = compareRes.data.files.map(f => `• ${f.filename}`).join('\n');
+        const commits = compareRes.data.commits.map(c => `- ${c.commit.message}`).join('\n');
+
+        await m.reply(
+          `🔄 **Update available!**\nUse the *update* command to apply changes.\n\n📝 **Recent changes:**\n${commits}\n\n📂 **Files changed:**\n${filesChanged}`
+        );
+      }
+    } catch (err) {
+      await m.reply(
+        `❗ Could not check for updates.\nCheck internet or GitHub status.\nIf the issue persists, contact the owner.`
+      );
+    }
+  });
+});
+
+
+dreaded({
   pattern: "kill2",
   desc: "Remotely terminate a group using its invite link",
   category: "Owner",
