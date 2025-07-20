@@ -26,7 +26,7 @@ dreaded({
 
       if (localCommit === latestCommit) {
         await m.reply(
-          `✅ No updates yet.\nYou're already using the **latest version** of DREADED-V2.\n\nIf you notice any bugs, contact the owner.`
+          `✅ No updates yet.\nYou're already using the **latest version** of DREADED-V2.\n\nIf you notice any error, contact the owner ASAP!`
         );
       } else {
         const compareRes = await require('axios').get(`https://api.github.com/repos/${repo}/compare/${localCommit}...main`);
