@@ -27,10 +27,9 @@ dreaded({
 
   const effect = arg;
 
-  if (!m.quoted || !m.quoted.image) {
-    return m.reply("🖼️ Please reply to an image to apply the filter.");
-  }
-
+  if (!m.quoted || m.quoted.mtype !== 'imageMessage') {
+  return m.reply("🖼️ reply to an image to apply the filter.");
+}
   if (!isValid(effect)) {
     return m.reply("❌ Invalid effect name.\n\nUse `filter list` to see all valid effects.");
   }
