@@ -3,6 +3,55 @@ const axios = require("axios");
 const { Sticker, StickerTypes } = require("wa-sticker-formatter");
 const FormData = require("form-data");
 const fs = require("fs");
+const { listEffects, applyDreadedEffect, isValid } = require("dreaded-effects");
+
+
+dreaded({
+  pattern: "filter",
+  desc: "Apply PhotoFunia filters to an image",
+  category: "Media",
+  filename: __filename
+}, async (context) => {
+  const { client, m, args } = context;
+
+  if (args.length === 0) {
+    return m.reply("📸 To apply a filter, reply to an image and type:\n\n`filter <effect_name>`\n\nTo view all effects, type: `filter list`");
+  }
+
+  const arg = args[0].toLowerCase();
+
+  if (arg === "list") {
+    const effects = listEffects().join(", ");
+    return m.reply(`✨ Available Effects:\n\n${effects}`);
+  }
+
+  const effect = arg;
+
+  if (!m.quoted || !m.quoted.image) {
+    return m.reply("🖼️ Please reply to an image to apply the filter.");
+  }
+
+  if (!isValid(effect)) {
+    return m.reply("❌ Invalid effect name.\n\nUse `filter list` to see all valid effects.");
+  }
+
+  const imageBuffer = await m.quoted.download();
+  const links = await applyDreadedEffect(effect, imageBuffer);
+
+  if (!Array.isArray(links) || links.length === 0) {
+    return m.reply("❌ Failed to apply filter. Try again later.");
+  }
+
+  const preferredOrder = ["large", "regular", "small"];
+  const selected = preferredOrder
+    .map(size => links.find(l => l.size.toLowerCase() === size))
+    .find(Boolean) || links[0];
+
+  await client.sendMessage(m.chat, {
+    image: { url: selected.url },
+    caption: `✨ *${effect}* filter applied (${selected.size})`
+  }, { quoted: m });
+});
 
 // Emoji Mix Command
 dreaded({
