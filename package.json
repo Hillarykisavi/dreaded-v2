@@ -31,6 +31,7 @@
     "canvacord": "^5.4.9",
     "cheerio": "^1.0.0-rc.10",
     "compile-run": "^2.3.4",
+       "dreaded-effects": "^1.0.0",
     "express": "latest",
     "file-type": "16.5.3",
     "fluent-ffmpeg": "^2.1.3",
