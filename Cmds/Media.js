@@ -665,15 +665,13 @@ dreaded({
 
 dreaded({
   pattern: "song",
-  desc: "download song as audio",
+  desc: "Play command",
   category: "Media",
   filename: __filename
 }, async (context) => {
   const { client, m, text } = context;
 
-  if (!text) {
-    return m.reply("Please provide a song name!");
-  }
+  if (!text) return m.reply("❌ Please provide a song name!");
 
   try {
     const { videos } = await yts(text);
@@ -690,12 +688,34 @@ dreaded({
     } catch (e) {}
 
     if (mp3) {
-      await m.reply(`_Downloading ${song.title}_`);
+      const responses = await axios.get(mp3, {
+        responseType: 'arraybuffer',
+        headers: { 'User-Agent': 'Mozilla/5.0' }
+      });
+
+      const mp3Buffer = Buffer.from(responses.data);
+
+      
+      const sizeMB = mp3Buffer.length / (1024 * 1024);
+      if (sizeMB > 16) {
+        await m.reply("File is large, download might take a while...");
+      }
+
+      let finalBuffer = mp3Buffer;
+      const isValid = await isValidMp3Buffer(mp3Buffer);
+      if (!isValid) {
+        await m.reply("Re-encoding your song...");
+        finalBuffer = await reencodeMp3(mp3Buffer);
+      }
+
+      await m.reply(`🎵 Downloading: *${song.title}*`);
       await client.sendMessage(m.chat, {
-        audio: { url: mp3 },
-        mimetype: "audio/mp3",
+        audio: finalBuffer,
+        mimetype: "audio/mpeg",
+        ptt: false,
         fileName: `${song.title}.mp3`
       }, { quoted: m });
+
     } else {
       const response = await fetch(`http://music.dreaded.site:3000/api/yt?url=${song.url}&format=mp3`, {
         method: 'GET',
@@ -706,20 +726,30 @@ dreaded({
       });
 
       if (!response.ok) {
-        throw new Error(`Download failed with status ${response.status}`);
+        throw new Error(`Backup download failed with status ${response.status}`);
       }
 
-      await m.reply(`_Retrying downloading..._`);
+      await m.reply("_Retrying downloading from backup..._");
+
+      const arrayBuffer = await response.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+
+      const sizeMB = buffer.length / (1024 * 1024);
+      if (sizeMB > 16) {
+        await m.reply("⚠️ File is large, download might take a while...");
+      }
 
       await client.sendMessage(m.chat, {
-        audio: { url: response.url },
-        mimetype: "audio/mp3",
+        audio: buffer,
+        mimetype: "audio/mpeg",
+        ptt: false,
         fileName: `${song.title}.mp3`
       }, { quoted: m });
     }
 
   } catch (error) {
-    return m.reply("Download failed: " + error.message);
+    console.error(error);
+    return m.reply("❌ Download failed: " + error.message);
   }
 });
 
