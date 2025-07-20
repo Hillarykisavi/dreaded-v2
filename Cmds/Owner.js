@@ -34,7 +34,7 @@ dreaded({
         const commits = compareRes.data.commits.map(c => `- ${c.commit.message}`).join('\n');
 
         await m.reply(
-          `🔄 **Update available!**\nUse the *update* command to apply changes.\n\n📝 **Recent changes:**\n${commits}\n\n📂 **Files changed:**\n${filesChanged}`
+          `🔄 *Update available!*\nUse the *update* command to apply changes.\n\n📝 *Recent changes:*\n${commits}\n\n📂 *Files changed:*\n${filesChanged}`
         );
       }
     } catch (err) {
