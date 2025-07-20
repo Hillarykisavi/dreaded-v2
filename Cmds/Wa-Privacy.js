@@ -43,8 +43,9 @@ dreaded({
   desc: "Set last seen privacy (all/contacts/contact_blacklist/none)",
   category: "Wa-Privacy",
   filename: __filename
-}, async ({ client, m, text }) => {
-  await ownerMiddleware({ client, m }, async () => {
+}, async (context) => {
+  await ownerMiddleware(context, async () => {
+    const { text, m, client } = context;
     await handlePrivacySetting({ client, m, text },
       (setting) => client.updateLastSeenPrivacy(setting),
       'lastseen'
@@ -58,8 +59,9 @@ dreaded({
   desc: "Set profile picture privacy (all/contacts/contact_blacklist/none)",
   category: "Wa-Privacy",
   filename: __filename
-}, async ({ client, m, text }) => {
-  await ownerMiddleware({ client, m }, async () => {
+}, async (context) => {
+  await ownerMiddleware(context, async () => {
+    const { text, m, client } = context;
     await handlePrivacySetting({ client, m, text },
       (setting) => client.updateProfilePicturePrivacy(setting),
       'mypp'
