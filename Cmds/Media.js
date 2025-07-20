@@ -157,16 +157,21 @@ dreaded({
 
     if (mp3) {
 
-const response = await axios.get(mp3, {
+const responses = await axios.get(mp3, {
       responseType: 'arraybuffer',
       headers: { 'User-Agent': 'Mozilla/5.0' }
     });
 
+const sizeMB = responses.data.length / (1024 * 1024);
+if (sizeMB > 16) {
+  return m.reply("❌ The file is too large for WhatsApp.");
+}
+
 
       await m.reply(`_Downloading ${song.title}_`);
       await client.sendMessage(m.chat, {
-        document: Buffer.from(response.data),
-        mimetype: "audio/mp3",
+        document: Buffer.from(responses.data),
+        mimetype: "audio/mpeg",
         fileName: `${song.title}.mp3`
       }, { quoted: m });
     } else {
