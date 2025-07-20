@@ -15,6 +15,130 @@ const { downloadFromSSSTwitter } = require('../Scrapers/twitter');
 const { Readable } = require("stream");
 
 const fetchIgMp4 = require("../Scrapers/instagram");
+const mm = require('music-metadata');
+const ffmpeg = require('fluent-ffmpeg');
+
+function bufferToStream(buffer) {
+  const stream = new Readable();
+  stream.push(buffer);
+  stream.push(null);
+  return stream;
+}
+
+async function isValidMp3Buffer(buffer) {
+  try {
+    const metadata = await mm.parseBuffer(buffer, 'audio/mpeg');
+    return metadata.format.container === 'MPEG' && metadata.format.duration > 0;
+  } catch {
+    return false;
+  }
+}
+
+async function reencodeMp3(buffer) {
+  const inputPath = '/tmp/input.mp3';
+  const outputPath = '/tmp/output.mp3';
+
+  fs.writeFileSync(inputPath, buffer);
+
+  return new Promise((resolve, reject) => {
+    ffmpeg(inputPath)
+      .audioCodec('libmp3lame')
+      .audioBitrate('128k')
+      .audioFrequency(44100)
+      .on('end', () => {
+        try {
+          const fixedBuffer = fs.readFileSync(outputPath);
+          resolve(fixedBuffer);
+        } catch (err) {
+          reject(err);
+        }
+      })
+      .on('error', reject)
+      .save(outputPath);
+  });
+}
+
+dreaded({
+  pattern: "play",
+  desc: "Play command",
+  category: "Media",
+  filename: __filename
+}, async (context) => {
+  const { client, m, text } = context;
+
+  if (!text) return m.reply("❌ Please provide a song name!");
+
+  try {
+    const { videos } = await yts(text);
+    if (!videos || videos.length === 0) {
+      throw new Error("No songs found!");
+    }
+
+    const song = videos[0];
+    let mp3 = null;
+
+    try {
+      const result = await ytdownload(song.url);
+      mp3 = result?.mp3;
+    } catch (e) {}
+
+    if (mp3) {
+      const responses = await axios.get(mp3, {
+        responseType: 'arraybuffer',
+        headers: { 'User-Agent': 'Mozilla/5.0' }
+      });
+
+      const mp3Buffer = Buffer.from(responses.data);
+      const sizeMB = mp3Buffer.length / (1024 * 1024);
+      if (sizeMB > 16) return m.reply("❌ The file is too large for WhatsApp.");
+
+      let finalBuffer = mp3Buffer;
+
+      const isValid = await isValidMp3Buffer(mp3Buffer);
+      if (!isValid) {
+        await m.reply("File seems corrupted, fixing with FFmpeg...");
+        finalBuffer = await reencodeMp3(mp3Buffer);
+      }
+
+      await m.reply(`🎵 Downloading: *${song.title}*`);
+      await client.sendMessage(m.chat, {
+        document: finalBuffer,
+        mimetype: "audio/mpeg",
+        ptt: false,
+        fileName: `${song.title}.mp3`
+      }, { quoted: m });
+
+    } else {
+      const response = await fetch(`http://music.dreaded.site:3000/api/yt?url=${song.url}&format=mp3`, {
+        method: 'GET',
+        headers: {
+          'User-Agent': 'Mozilla/5.0',
+          'Accept': 'audio/mpeg'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Backup download failed with status ${response.status}`);
+      }
+
+      await m.reply("_Retrying downloading from backup..._");
+
+      const arrayBuffer = await response.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+
+      await client.sendMessage(m.chat, {
+        audio: buffer,
+        mimetype: "audio/mpeg",
+        ptt: false,
+        fileName: `${song.title}.mp3`
+      }, { quoted: m });
+    }
+
+  } catch (error) {
+    console.error(error);
+    return m.reply("❌ Download failed: " + error.message);
+  }
+});
 
 dreaded({
   pattern: "igdl",
@@ -129,77 +253,7 @@ dreaded({
 
 
 
-dreaded({
-  pattern: "play",
-  desc: "Play command",
-  category: "Media",
-  filename: __filename
-}, async (context) => {
-  const { client, m, text } = context;
 
-  if (!text) {
-    return m.reply("Please provide a song name!");
-  }
-
-  try {
-    const { videos } = await yts(text);
-    if (!videos || videos.length === 0) {
-      throw new Error("No songs found!");
-    }
-
-    const song = videos[0];
-    let mp3 = null;
-
-    try {
-      const result = await ytdownload(song.url);
-      mp3 = result?.mp3;
-    } catch (e) {}
-
-    if (mp3) {
-
-const responses = await axios.get(mp3, {
-      responseType: 'arraybuffer',
-      headers: { 'User-Agent': 'Mozilla/5.0' }
-    });
-
-const sizeMB = responses.data.length / (1024 * 1024);
-if (sizeMB > 16) {
-  return m.reply("❌ The file is too large for WhatsApp.");
-}
-
-
-      await m.reply(`_Downloading ${song.title}_`);
-      await client.sendMessage(m.chat, {
-        document: Buffer.from(responses.data),
-        mimetype: "audio/mpeg",
-        fileName: `${song.title}.mp3`
-      }, { quoted: m });
-    } else {
-      const response = await fetch(`http://music.dreaded.site:3000/api/yt?url=${song.url}&format=mp3`, {
-        method: 'GET',
-        headers: {
-          'User-Agent': 'Mozilla/5.0',
-          'Accept': 'audio/mpeg'
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error(`Download failed with status ${response.status}`);
-      }
-
-      await m.reply(`_Retrying downloading..._`);
-
-      await client.sendMessage(m.chat, {
-        document: { url: response.url },
-        mimetype: "audio/mp3",
-        fileName: `${song.title}.mp3`
-      }, { quoted: m });
-    }
-
-  } catch (error) {
-    return m.reply("Download failed: " + error.message);
-  }
-});
 
 dreaded({
   pattern: "video",
