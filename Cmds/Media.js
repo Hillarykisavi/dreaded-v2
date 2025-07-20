@@ -18,12 +18,15 @@ const fetchIgMp4 = require("../Scrapers/instagram");
 const mm = require('music-metadata');
 const ffmpeg = require('fluent-ffmpeg');
 
+
+
 function bufferToStream(buffer) {
   const stream = new Readable();
   stream.push(buffer);
   stream.push(null);
   return stream;
 }
+
 
 async function isValidMp3Buffer(buffer) {
   try {
@@ -33,6 +36,40 @@ async function isValidMp3Buffer(buffer) {
     return false;
   }
 }
+
+
+async function waitForFileToStabilize(filePath, timeout = 5000) {
+  let lastSize = -1;
+  let stableCount = 0;
+  const interval = 200;
+
+  return new Promise((resolve, reject) => {
+    const start = Date.now();
+    const timer = setInterval(async () => {
+      try {
+        const { size } = await fs.promises.stat(filePath);
+        if (size === lastSize) {
+          stableCount++;
+          if (stableCount >= 3) {
+            clearInterval(timer);
+            return resolve();
+          }
+        } else {
+          stableCount = 0;
+          lastSize = size;
+        }
+
+        if (Date.now() - start > timeout) {
+          clearInterval(timer);
+          return reject(new Error("File stabilization timed out."));
+        }
+      } catch (err) {
+        
+      }
+    }, interval);
+  });
+}
+
 
 async function reencodeMp3(buffer) {
   const inputPath = '/tmp/input.mp3';
@@ -45,8 +82,9 @@ async function reencodeMp3(buffer) {
       .audioCodec('libmp3lame')
       .audioBitrate('128k')
       .audioFrequency(44100)
-      .on('end', () => {
+      .on('end', async () => {
         try {
+          await waitForFileToStabilize(outputPath);
           const fixedBuffer = fs.readFileSync(outputPath);
           resolve(fixedBuffer);
         } catch (err) {
@@ -57,6 +95,7 @@ async function reencodeMp3(buffer) {
       .save(outputPath);
   });
 }
+
 
 dreaded({
   pattern: "play",
@@ -89,13 +128,17 @@ dreaded({
       });
 
       const mp3Buffer = Buffer.from(responses.data);
+
       
+      const sizeMB = mp3Buffer.length / (1024 * 1024);
+      if (sizeMB > 16) {
+        await m.reply("File is large, download might take a while...");
+      }
 
       let finalBuffer = mp3Buffer;
-
       const isValid = await isValidMp3Buffer(mp3Buffer);
       if (!isValid) {
-        await m.reply("File seems corrupted, fixing with FFmpeg...");
+        await m.reply("Re-encoding your song...");
         finalBuffer = await reencodeMp3(mp3Buffer);
       }
 
@@ -124,6 +167,11 @@ dreaded({
 
       const arrayBuffer = await response.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
+
+      const sizeMB = buffer.length / (1024 * 1024);
+      if (sizeMB > 16) {
+        await m.reply("⚠️ File is large, download might take a while...");
+      }
 
       await client.sendMessage(m.chat, {
         audio: buffer,
