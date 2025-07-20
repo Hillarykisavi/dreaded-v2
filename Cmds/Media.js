@@ -89,8 +89,7 @@ dreaded({
       });
 
       const mp3Buffer = Buffer.from(responses.data);
-      const sizeMB = mp3Buffer.length / (1024 * 1024);
-      if (sizeMB > 16) return m.reply("❌ The file is too large for WhatsApp.");
+      
 
       let finalBuffer = mp3Buffer;
 
