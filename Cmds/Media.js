@@ -156,10 +156,17 @@ dreaded({
     } catch (e) {}
 
     if (mp3) {
+
+const response = await axios.get(mp3, {
+      responseType: 'arraybuffer',
+      headers: { 'User-Agent': 'Mozilla/5.0' }
+    });
+
+
       await m.reply(`_Downloading ${song.title}_`);
       await client.sendMessage(m.chat, {
-        document: { url: mp3 },
-        mimetype: "audio/mpeg",
+        document: Buffer.from(response.data),
+        mimetype: "audio/mp3",
         fileName: `${song.title}.mp3`
       }, { quoted: m });
     } else {
