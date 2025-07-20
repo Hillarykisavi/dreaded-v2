@@ -42,6 +42,7 @@
     "javascript-obfuscator": "^4.1.0",
     "jimp": "^0.16.13",
     "luxon": "^3.4.4",
+   "music-metadata": "latest",
     "moment-timezone": "^0.5.34",
     "node-cache": "^5.1.2",
     "node-fetch": "^2.6.1",
