@@ -93,32 +93,33 @@ async function handleMessageRevocation(client, revocationMessage, botNumber) {
   
   if (convertedJid?.includes(botNumber)) return;
 
+  if (m.conversation) {
   const deletedByFormatted = `@${convertedJid.split('@')[0]}`;
   const timestamp = getEastAfricaTimestamp();
 
-  let notificationText = `_ANTIDELETE_\n\n`;
-
-  if (remoteJid.includes('status@broadcast')) {
-    notificationText += `Status Update deleted by ${deletedByFormatted}\n\nTime: ${timestamp}\n\n`;
-  } else if (remoteJid.endsWith('@s.whatsapp.net')) {
-    notificationText += `Private Message deleted by ${deletedByFormatted}\n\nTime: ${timestamp}\n\n`;
-  } else if (remoteJid.endsWith('@g.us')) {
-    notificationText += `Message deleted by ${deletedByFormatted} in ${groupName}\n\nTime: ${timestamp}\n\n`;
+ 
+  let chatType = '🙍 Private';
+  if (m.chat.endsWith('@g.us')) {
+    chatType = '👥 Group';
+  } else if (m.chat === 'status@broadcast') {
+    chatType = '📡 Status';
   }
 
-  try {
-    const m = originalMessage.message;
-    const userJid = client.user.id;
+  
+  const location = chatType === '👥 Group' ? `📍 In: ${groupName}\n` : '';
 
-    if (m.conversation) {
-      notificationText += `Deleted Message: ${m.conversation}`;
-      return await client.sendMessage(userJid, { text: notificationText });
-    }
+  let notificationText = `🗑️ *Message Deleted*\n\n`;
+  notificationText += `👤 Deleted by: ${deletedByFormatted}\n`;
+  notificationText += `🕒 Time: ${timestamp}\n`;
+  notificationText += `📨 Chat Type: ${chatType}\n`;
+  notificationText += location;
+  notificationText += `\n💬 Content:\n${m.conversation}`;
 
-    if (m.extendedTextMessage) {
-      notificationText += `Deleted Content: ${m.extendedTextMessage.text}`;
-      return await client.sendMessage(userJid, { text: notificationText });
-    }
+  return await client.sendMessage(userJid, {
+    text: notificationText,
+    mentions: [convertedJid]
+  });
+}
 
     const getMediaReply = (mediaMessage, caption = "") => {
       const finalCaption = caption ? `${notificationText}\n\nCaption: ${caption}` : notificationText;
