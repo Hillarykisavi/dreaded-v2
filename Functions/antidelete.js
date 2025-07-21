@@ -64,14 +64,14 @@ async function handleMessageRevocation(client, revocationMessage, botNumber) {
   let isGroup = remoteJid.endsWith('@g.us');
   let convertedJid = deletedBy;
 
-  // Group + LID handling
+  
   if (isGroup) {
     const fakeM = { chat: remoteJid, isGroup: true, sender: deletedBy };
     const groupContext = await client.getGroupContext(fakeM, client.user.id);
 
     groupName = groupContext?.groupName || remoteJid;
 
-    // Convert LID to actual JID if needed
+   
     if (deletedBy?.endsWith('@lid') && typeof groupContext.getJidFromLid === 'function') {
       try {
         convertedJid = await groupContext.getJidFromLid(deletedBy);
@@ -80,7 +80,7 @@ async function handleMessageRevocation(client, revocationMessage, botNumber) {
       }
     }
 
-    // Same for sentBy
+    
     if (sentBy?.endsWith('@lid') && typeof groupContext.getJidFromLid === 'function') {
       try {
         sentBy = await groupContext.getJidFromLid(sentBy);
@@ -90,7 +90,7 @@ async function handleMessageRevocation(client, revocationMessage, botNumber) {
     }
   }
 
-  // Skip if deleted by bot itself
+  
   if (convertedJid?.includes(botNumber)) return;
 
   const deletedByFormatted = `@${convertedJid.split('@')[0]}`;
@@ -112,7 +112,10 @@ async function handleMessageRevocation(client, revocationMessage, botNumber) {
 
     if (m.conversation) {
       notificationText += `Deleted Message: ${m.conversation}`;
-      return await client.sendMessage(userJid, { text: notificationText });
+      return await client.sendMessage(jid, {
+  text: notificationText,
+  mentions: [convertedJid]
+});
     }
 
     if (m.extendedTextMessage) {
