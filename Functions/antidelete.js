@@ -50,19 +50,52 @@ function getEastAfricaTimestamp() {
 
 async function handleMessageRevocation(client, revocationMessage, botNumber) {
   const remoteJid = revocationMessage.key.remoteJid;
-  const messageId = revocationMessage.message.protocolMessage.key.id;
+  const messageId = revocationMessage.message?.protocolMessage?.key?.id;
+  if (!messageId) return;
 
   const chatData = loadChatData(remoteJid, messageId);
   const originalMessage = chatData[0];
   if (!originalMessage) return;
 
-  const deletedBy = revocationMessage.participant || revocationMessage.key.participant || revocationMessage.key.remoteJid;
-  const sentBy = originalMessage.key.participant || originalMessage.key.remoteJid;
+  let deletedBy = revocationMessage.participant || revocationMessage.key.participant || remoteJid;
+  let sentBy = originalMessage.key.participant || originalMessage.key.remoteJid;
 
-  if (deletedBy.includes(botNumber)) return;
+  let groupName = remoteJid;
+  let isGroup = remoteJid.endsWith('@g.us');
+  let convertedJid = deletedBy;
 
-  const deletedByFormatted = `@${deletedBy.split('@')[0]}`;
+  
+  if (isGroup) {
+    const fakeM = { chat: remoteJid, isGroup: true, sender: deletedBy };
+    const groupContext = await client.getGroupContext(fakeM, client.user.id);
+
+    groupName = groupContext?.groupName || remoteJid;
+
+    
+    if (deletedBy?.endsWith('@lid') && typeof groupContext.getJidFromLid === 'function') {
+      try {
+        convertedJid = await groupContext.getJidFromLid(deletedBy);
+      } catch (e) {
+        console.warn('Failed to convert deletedBy LID:', deletedBy);
+      }
+    }
+
+    
+    if (sentBy?.endsWith('@lid') && typeof groupContext.getJidFromLid === 'function') {
+      try {
+        sentBy = await groupContext.getJidFromLid(sentBy);
+      } catch (e) {
+        console.warn('Failed to convert sentBy LID:', sentBy);
+      }
+    }
+  }
+
+  
+  if (convertedJid?.includes(botNumber)) return;
+
+  const deletedByFormatted = `@${convertedJid.split('@')[0]}`;
   const timestamp = getEastAfricaTimestamp();
+
   let notificationText = `_ANTIDELETE_\n\n`;
 
   if (remoteJid.includes('status@broadcast')) {
@@ -70,9 +103,6 @@ async function handleMessageRevocation(client, revocationMessage, botNumber) {
   } else if (remoteJid.endsWith('@s.whatsapp.net')) {
     notificationText += `Private Message deleted by ${deletedByFormatted}\n\nTime: ${timestamp}\n\n`;
   } else if (remoteJid.endsWith('@g.us')) {
-    const fakeM = { chat: remoteJid, isGroup: true, sender: deletedBy };
-    const groupContext = await client.getGroupContext(fakeM, client.user.id);
-    const groupName = groupContext?.groupName || remoteJid;
     notificationText += `Message deleted by ${deletedByFormatted} in ${groupName}\n\nTime: ${timestamp}\n\n`;
   }
 
