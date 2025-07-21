@@ -112,7 +112,7 @@ async function handleMessageRevocation(client, revocationMessage, botNumber) {
 
     if (m.conversation) {
       notificationText += `Deleted Message: ${m.conversation}`;
-      return await client.sendMessage(jid, {
+      return await client.sendMessage(userJid, {
   text: notificationText,
   mentions: [convertedJid]
 });
