@@ -1,5 +1,6 @@
 module.exports = async (client, m, Owner, prefix) => {
 
+
   const textL = m.text.toLowerCase();
   const quotedMessage = m.msg?.contextInfo?.quotedMessage;
 
