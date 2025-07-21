@@ -49,71 +49,75 @@ function getEastAfricaTimestamp() {
 }
 
 async function handleMessageRevocation(client, revocationMessage, botNumber) {
+  const remoteJid = revocationMessage.key.remoteJid;
+  const messageId = revocationMessage.message?.protocolMessage?.key?.id;
+  if (!messageId) return;
+
+  const chatData = loadChatData(remoteJid, messageId);
+  const originalMessage = chatData[0];
+  if (!originalMessage) return;
+
+  let deletedBy = revocationMessage.participant || revocationMessage.key.participant || remoteJid;
+  let sentBy = originalMessage.key.participant || originalMessage.key.remoteJid;
+
+  let groupName = remoteJid;
+  let isGroup = remoteJid.endsWith('@g.us');
+  let convertedJid = deletedBy;
+
+  // Group + LID handling
+  if (isGroup) {
+    const fakeM = { chat: remoteJid, isGroup: true, sender: deletedBy };
+    const groupContext = await client.getGroupContext(fakeM, client.user.id);
+
+    groupName = groupContext?.groupName || remoteJid;
+
+    // Convert LID to actual JID if needed
+    if (deletedBy?.endsWith('@lid') && typeof groupContext.getJidFromLid === 'function') {
+      try {
+        convertedJid = await groupContext.getJidFromLid(deletedBy);
+      } catch (e) {
+        console.warn('Failed to convert deletedBy LID:', deletedBy);
+      }
+    }
+
+    // Same for sentBy
+    if (sentBy?.endsWith('@lid') && typeof groupContext.getJidFromLid === 'function') {
+      try {
+        sentBy = await groupContext.getJidFromLid(sentBy);
+      } catch (e) {
+        console.warn('Failed to convert sentBy LID:', sentBy);
+      }
+    }
+  }
+
+  // Skip if deleted by bot itself
+  if (convertedJid?.includes(botNumber)) return;
+
+  const deletedByFormatted = `@${convertedJid.split('@')[0]}`;
+  const timestamp = getEastAfricaTimestamp();
+
+  let notificationText = `_ANTIDELETE_\n\n`;
+
+  if (remoteJid.includes('status@broadcast')) {
+    notificationText += `Status Update deleted by ${deletedByFormatted}\n\nTime: ${timestamp}\n\n`;
+  } else if (remoteJid.endsWith('@s.whatsapp.net')) {
+    notificationText += `Private Message deleted by ${deletedByFormatted}\n\nTime: ${timestamp}\n\n`;
+  } else if (remoteJid.endsWith('@g.us')) {
+    notificationText += `Message deleted by ${deletedByFormatted} in ${groupName}\n\nTime: ${timestamp}\n\n`;
+  }
+
   try {
-    const remoteJid = revocationMessage.key.remoteJid;
-    const messageId = revocationMessage.message?.protocolMessage?.key?.id;
-    if (!messageId) return;
+    const m = originalMessage.message;
+    const userJid = client.user.id;
 
-    const chatData = loadChatData(remoteJid, messageId);
-    const originalMessage = chatData[0];
-    if (!originalMessage) return;
-
-    let deletedBy = revocationMessage.participant || revocationMessage.key.participant || remoteJid;
-    let sentBy = originalMessage.key.participant || originalMessage.key.remoteJid;
-
-    let groupName = remoteJid;
-    let isGroup = remoteJid.endsWith('@g.us');
-    let convertedJid = deletedBy;
-
-    if (isGroup) {
-      const fakeM = { chat: remoteJid, isGroup: true, sender: deletedBy };
-      const groupContext = await client.getGroupContext(fakeM, client.user.id);
-
-      groupName = groupContext?.groupName || remoteJid;
-
-      if (deletedBy?.endsWith('@lid') && typeof groupContext.getJidFromLid === 'function') {
-        try {
-          convertedJid = await groupContext.getJidFromLid(deletedBy);
-        } catch (e) {
-          console.warn('Failed to convert deletedBy LID:', deletedBy);
-        }
-      }
-
-      if (sentBy?.endsWith('@lid') && typeof groupContext.getJidFromLid === 'function') {
-        try {
-          sentBy = await groupContext.getJidFromLid(sentBy);
-        } catch (e) {
-          console.warn('Failed to convert sentBy LID:', sentBy);
-        }
-      }
+    if (m.conversation) {
+      notificationText += `Deleted Message: ${m.conversation}`;
+      return await client.sendMessage(userJid, { text: notificationText });
     }
 
-    if (convertedJid?.includes(botNumber)) return;
-
-    const deletedByFormatted = `@${convertedJid.split('@')[0]}`;
-    const timestamp = getEastAfricaTimestamp();
-
-    let chatType = '🙍 Private';
-    if (remoteJid.endsWith('@g.us')) {
-      chatType = '👥 Group';
-    } else if (remoteJid === 'status@broadcast') {
-      chatType = '📡 Status';
-    }
-
-    const location = chatType === '👥 Group' ? `📍 In: ${groupName}\n` : '';
-
-    let notificationText = `🗑️ *Message Deleted*\n\n`;
-    notificationText += `👤 Deleted by: ${deletedByFormatted}\n`;
-    notificationText += `🕒 Time: ${timestamp}\n`;
-    notificationText += `📨 Chat Type: ${chatType}\n`;
-    notificationText += location;
-
-    if (originalMessage.conversation) {
-      notificationText += `\n💬 Content:\n${originalMessage.conversation}`;
-      return await client.sendMessage(remoteJid, {
-        text: notificationText,
-        mentions: [convertedJid]
-      });
+    if (m.extendedTextMessage) {
+      notificationText += `Deleted Content: ${m.extendedTextMessage.text}`;
+      return await client.sendMessage(userJid, { text: notificationText });
     }
 
     const getMediaReply = (mediaMessage, caption = "") => {
@@ -133,53 +137,54 @@ async function handleMessageRevocation(client, revocationMessage, botNumber) {
       };
     };
 
-    if (originalMessage.imageMessage) {
-      const buffer = await client.downloadMediaMessage(originalMessage.imageMessage);
-      return await client.sendMessage(remoteJid, {
+    if (m.imageMessage) {
+      const buffer = await client.downloadMediaMessage(m.imageMessage);
+      return await client.sendMessage(userJid, {
         image: buffer,
-        ...getMediaReply(originalMessage.imageMessage, originalMessage.imageMessage.caption)
+        ...getMediaReply(m.imageMessage, m.imageMessage.caption)
       });
     }
 
-    if (originalMessage.videoMessage) {
-      const buffer = await client.downloadMediaMessage(originalMessage.videoMessage);
-      return await client.sendMessage(remoteJid, {
+    if (m.videoMessage) {
+      const buffer = await client.downloadMediaMessage(m.videoMessage);
+      return await client.sendMessage(userJid, {
         video: buffer,
-        ...getMediaReply(originalMessage.videoMessage, originalMessage.videoMessage.caption)
+        ...getMediaReply(m.videoMessage, m.videoMessage.caption)
       });
     }
 
-    if (originalMessage.stickerMessage) {
-      const buffer = await client.downloadMediaMessage(originalMessage.stickerMessage);
-      return await client.sendMessage(remoteJid, {
+    if (m.stickerMessage) {
+      const buffer = await client.downloadMediaMessage(m.stickerMessage);
+      return await client.sendMessage(userJid, {
         sticker: buffer,
         contextInfo: getMediaReply().contextInfo
       });
     }
 
-    if (originalMessage.documentMessage) {
-      const buffer = await client.downloadMediaMessage(originalMessage.documentMessage);
-      return await client.sendMessage(remoteJid, {
+    if (m.documentMessage) {
+      const buffer = await client.downloadMediaMessage(m.documentMessage);
+      return await client.sendMessage(userJid, {
         document: buffer,
-        fileName: originalMessage.documentMessage.fileName,
-        mimetype: originalMessage.documentMessage.mimetype,
-        ...getMediaReply(originalMessage.documentMessage)
+        fileName: m.documentMessage.fileName,
+        mimetype: m.documentMessage.mimetype,
+        ...getMediaReply(m.documentMessage)
       });
     }
 
-    if (originalMessage.audioMessage) {
-      const buffer = await client.downloadMediaMessage(originalMessage.audioMessage);
-      return await client.sendMessage(remoteJid, {
+    if (m.audioMessage) {
+      const buffer = await client.downloadMediaMessage(m.audioMessage);
+      return await client.sendMessage(userJid, {
         audio: buffer,
         mimetype: 'audio/mpeg',
-        ptt: originalMessage.audioMessage.ptt === true,
+        ptt: m.audioMessage.ptt === true,
         caption: notificationText,
         contextInfo: getMediaReply().contextInfo
       });
     }
+
   } catch (error) {
     console.error('Error handling deleted message:', error);
-    const notificationText = `⚠️ Error handling deleted message: ${error.message}`;
+    notificationText += `\n\n⚠️ Error recovering deleted content.`;
     await client.sendMessage(client.user.id, { text: notificationText });
   }
 }
