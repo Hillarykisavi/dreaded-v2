@@ -4,7 +4,7 @@ const Obf = require("javascript-obfuscator");
 const { c, cpp, node, python, java } = require('compile-run');
 const fs = require('fs');
 const path = require('path');
-const { obfuscateJS } = require("..Scrapers/obfuscator");
+const { obfuscateJS } = require("../Scrapers/obfuscator");
 
 dreaded({
   pattern: "encrypt2",
