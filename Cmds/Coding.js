@@ -2,6 +2,51 @@ const dreaded = global.dreaded;
 const fetch = require('node-fetch');
 const Obf = require("javascript-obfuscator");
 const { c, cpp, node, python, java } = require('compile-run');
+const fs = require('fs');
+const path = require('path');
+const { obfuscateJS } = require("..Scrapers/obfuscator");
+
+dreaded({
+  pattern: "encrypt2",
+  desc: "Encrypt command using PreEmptive and send as file",
+  alias: ["enc2", "obf2"],
+  category: "Coding",
+  filename: __filename
+}, async ({ m, client }) => {
+  if (m.quoted && m.quoted.text) {
+    const code = m.quoted.text;
+
+    try {
+      const result = await obfuscateJS(code);
+      const filename = `obf-${Date.now()}.js`;
+      const filepath = path.join(__dirname, "temp", filename);
+
+      
+      if (!fs.existsSync(path.dirname(filepath))) {
+        fs.mkdirSync(path.dirname(filepath));
+      }
+
+      fs.writeFileSync(filepath, result);
+
+      await client.sendMessage(m.chat, {
+        document: fs.readFileSync(filepath),
+        fileName: filename,
+        mimetype: 'application/javascript',
+        caption: '✅ Obfuscated successfully..'
+      }, { quoted: m });
+
+      
+      fs.unlinkSync(filepath);
+
+    } catch (err) {
+      console.error("❌ Obfuscation failed:", err.message);
+      m.reply("Failed to encrypt the code.\n" + err.message);
+    }
+
+  } else {
+    m.reply("Tag a valid JavaScript code to encrypt using PreEmptive!");
+  }
+});
 
 
 dreaded({
