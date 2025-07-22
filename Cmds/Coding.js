@@ -18,7 +18,7 @@ dreaded({
 
     try {
       const result = await obfuscateJS(code);
-      const filename = `obf-${Date.now()}.js`;
+      const filename = `obfuscated.js`;
       const filepath = path.join(__dirname, "temp", filename);
 
       
