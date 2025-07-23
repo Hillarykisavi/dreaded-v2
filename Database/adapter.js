@@ -26,6 +26,7 @@ const {
     removeSudoUser,
     saveConversation,
     getRecentMessages,
+    initializeDatabase,
     deleteUserHistory
 } = db;
 
@@ -44,5 +45,6 @@ module.exports = {
     removeSudoUser,
     saveConversation,
     getRecentMessages,
+    initializeDatabase,
     deleteUserHistory
 };
