@@ -107,12 +107,14 @@ module.exports = dreaded = async (client, m, chatUpdate, store) => {
         const DevDreaded = Array.isArray(sudoUsers) ? sudoUsers : [];
         const Owner = DevDreaded.map(v => v.replace(mentionRegex, "") + "@s.whatsapp.net").includes(groupSender);
 
-        const userStatus = {
-            isMe: itsMe,
-            isOwner: Owner,
-            isSudo: sudoUsers.includes(groupSender.replace(whatsappSuffixRegex, '')),
-            isBanned: bannedUsers.includes(groupSender.replace(whatsappSuffixRegex, ''))
-        };
+        const userJid = groupSender.replace?.(whatsappSuffixRegex, '') || '';
+
+const userStatus = {
+    isMe: itsMe,
+    isOwner: Owner,
+    isSudo: sudoUsers.includes(userJid),
+    isBanned: bannedUsers.includes(userJid)
+};
 
         if (cmd && userStatus.isBanned) {
             await client.sendMessage(m.chat, { text: "❗You are banned from using bot commands." }, { quoted: m });
