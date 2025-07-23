@@ -1,66 +1,52 @@
-const axios = require('axios');
+const axios = require("axios");
+const cheerio = require("cheerio");
 
-async function igStalk(username) {
-  const formData = new URLSearchParams();
-  formData.append('profile', username);
 
+async function stalkIg(username) {
   try {
-    const profileRes = await axios.post('https://tools.xrespond.com/api/instagram/profile-info', formData.toString(), {
+    const url = `https://media.mollygram.com/?url=${username}`;
+
+    const response = await axios.get(url, {
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'origin': 'https://bitchipdigital.com',
-        'referer': 'https://bitchipdigital.com/',
-        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-      }
+        "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Mobile Safari/537.36",
+        "Referer": "https://mollygram.com/",
+        "Origin": "https://mollygram.com"
+      },
     });
 
-    const raw = profileRes.data?.data?.data;
-    if (!raw || profileRes.data.status !== 'success') throw new Error('emror');
+    const { html } = response.data;
+    const $ = cheerio.load(html);
 
-    const followers = raw.follower_count ?? 0;
+    
+    const profilePic = $("img").attr("src") || '';
+    const name = $("h4").text().trim() || '';
+    const bio = $("p.text-dark").text().trim() || '';
 
-    const postsForm = new URLSearchParams();
-    postsForm.append('profile', username);
+   
+    let posts = '', followers = '', following = '';
+    $(".d-flex.justify-content-around.text-center.mt-3 > div").each((_, el) => {
+      const label = $(el).find("div.text-dark.small").text().trim().toLowerCase();
+      const value = $(el).find("span").text().trim();
 
-    const postsRes = await axios.post('https://tools.xrespond.com/api/instagram/media/posts', postsForm.toString(), {
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'origin': 'https://bitchipdigital.com',
-        'referer': 'https://bitchipdigital.com/',
-        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-      }
+      if (label === "posts") posts = value;
+      else if (label === "followers") followers = value;
+      else if (label === "following") following = value;
     });
-
-    const items = postsRes.data?.data?.data?.items || [];
-
-    let totalLike = 0;
-    let totalComment = 0;
-
-    for (const post of items) {
-      totalLike += post.like_count || 0;
-      totalComment += post.comment_count || 0;
-    }
-
-    const totalEngagement = totalLike + totalComment;
-    const averageEngagementRate = followers > 0 && items.length > 0
-      ? ((totalEngagement / items.length) / followers) * 100
-      : 0;
 
     return {
-      username: raw.username || '-',
-      name: raw.full_name || '-',
-      bio: raw.biography || '-',
+      username,
+      name,
+      bio,
+      profilePic,
+      posts,
       followers,
-      following: raw.following_count ?? null,
-      posts: raw.media_count ?? null,
-      profile_pic: raw.hd_profile_pic_url_info?.url || raw.profile_pic_url_hd || '',
-      verified: raw.is_verified || raw.show_blue_badge_on_main_profile || false,
-      engagement_rate: parseFloat(averageEngagementRate.toFixed(2))
+      following
     };
 
-  } catch (err) {
-    return { error: true, message: err.message };
+  } catch (error) {
+    console.error("scrap error:", error.message);
+    return null;
   }
 }
 
-module.exports = { igStalk };
+module.exports = stalkIg
