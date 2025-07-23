@@ -132,8 +132,8 @@ const { args, m } = context;
 
 
 dreaded({
-  pattern: "antidemote",
-  desc: "Antidemote command",
+  pattern: "adminevents",
+  desc: "Admin events command",
   category: "Settings",
   filename: __filename
 }, async (context) => {
@@ -153,19 +153,19 @@ dreaded({
           const prefix = settings.prefix;
   
           let groupSettings = await getGroupSetting(jid);
-          let isEnabled = groupSettings?.antidemote === true;  
+          let isEnabled = groupSettings?. adminevents === true;  
   
           if (value === 'on' || value === 'off') {
               const action = value === 'on';
   
               if (isEnabled === action) {
-                  return await m.reply(`✅ Antidemote is already ${value.toUpperCase()}.`);
+                  return await m.reply(`✅ Admin events is already ${value.toUpperCase()}.`);
               }
   
               await updateGroupSetting(jid, 'antidemote', action ? 'true' : 'false');
-              await m.reply(`✅ Antidemote has been turned ${value.toUpperCase()} for this group. Bot will monitor demotions.`);
+              await m.reply(`✅ Admin events has been turned ${value.toUpperCase()} for this group. Bot will notify when demotions/promotions are done...`);
           } else {
-              await m.reply(`📄 Current Antidemote setting for this group: ${isEnabled ? 'ON' : 'OFF'}\n\n _Use ${prefix}antidemote on or ${prefix}antidemote off to change it._`);
+              await m.reply(`📄 Current Admin events setting for this group: ${isEnabled ? 'ON' : 'OFF'}\n\n _Use ${prefix}antidemote on or ${prefix}antidemote off to change it._`);
           }
       });
 });
@@ -269,124 +269,10 @@ const { args, m, client, isAdmin, isBotAdmin } = context;
       });
 });
 
-dreaded({
-  pattern: "antipromote",
-  desc: "Antipromote command",
-  category: "Settings",
-  filename: __filename
-}, async (context) => {
-  
-  
-  
-      await ownerMiddleware(context, async () => {
-const { args, m } = context;
-          
-          const value = args[0]?.toLowerCase();
-          const jid = m.chat;
-  
-          if (!jid.endsWith('@g.us')) {
-              return await m.reply('❌ This command can only be used in groups.');
-          }
-  
-          const settings = await getSettings();
-          const prefix = settings.prefix;
-  
-          let groupSettings = await getGroupSetting(jid);
-          let isEnabled = groupSettings?.antipromote === true;
-  
-          if (value === 'on' || value === 'off') {
-              const action = value === 'on';
-  
-              if (isEnabled === action) {
-                  return await m.reply(`✅ Antipromote is already ${value.toUpperCase()}.`);
-              }
-  
-              await updateGroupSetting(jid, 'antipromote', action ? 'true' : 'false');
-              await m.reply(`✅ Antipromote has been turned ${value.toUpperCase()} for this group. Bot will now monitor promotions.`);
-          } else {
-              await m.reply(`📄 Current Antipromote setting for this group: ${isEnabled ? 'ON' : 'OFF'}\n\n _Use ${prefix}antipromote on or ${prefix}antipromote off to change it._`);
-          }
-      });
-});
 
 
-dreaded({
-  pattern: "antitag",
-  desc: "Antitag command",
-  category: "Settings",
-  filename: __filename
-}, async (context) => {
-  
-  
-  
-      await ownerMiddleware(context, async () => {
-const { args, m } = context;
-    
-          const value = args[0]?.toLowerCase();
-          const jid = m.chat;
-  
-          if (!jid.endsWith('@g.us')) {
-              return await m.reply('❌ This command can only be used in groups.');
-          }
-  
-          const settings = await getSettings();
-          const prefix = settings.prefix;
-  
-          let groupSettings = await getGroupSetting(jid);
-          let isEnabled = groupSettings?.antitag === true;
-  
-          const Myself = await client.decodeJid(client.user.id);
-          const groupMetadata = await client.groupMetadata(m.chat);
-          const userAdmins = groupMetadata.participants.filter(p => p.admin !== null).map(p => p.id);
-          const isBotAdmin = userAdmins.includes(Myself);
-  
-          if (value === 'on' && !isBotAdmin) {
-              return await m.reply('❌ I need admin privileges to enable Antitag.');
-          }
-  
-          if (value === 'on' || value === 'off') {
-              const action = value === 'on';
-  
-              if (isEnabled === action) {
-                  return await m.reply(`✅ Antitag is already ${value.toUpperCase()}.`);
-              }
-  
-              await updateGroupSetting(jid, 'antitag', action ? 'true' : 'false');
-              await m.reply(`✅ Antitag has been turned ${value.toUpperCase()} for this group.`);
-          } else {
-              await m.reply(`📄 Current Antitag setting for this group: ${isEnabled ? 'ON' : 'OFF'}\n\n _Use ${prefix}antitag on or ${prefix}antitag off to change it._`);
-          }
-      });
-});
 
 
-dreaded({
-  pattern: "autobio",
-  alias: [],
-  desc: "Autobio command",
-  category: "Settings",
-  filename: __filename
-}, async (context) => {
-  await ownerMiddleware(context, async () => {
-const { args, m } = context;
-    const value = args[0]?.toLowerCase();
-    const settings = await getSettings();
-    const prefix = settings.prefix;
-    const isEnabled = settings.autobio === true;
-
-    if (value === 'on') {
-      if (isEnabled) return m.reply('✅ Autobio is already ON.');
-      await updateSetting('autobio', 'true');
-      await m.reply('✅ Autobio has been turned ON. The bot will auto-update its about section every 10 seconds.');
-    } else if (value === 'off') {
-      if (!isEnabled) return m.reply('✅ Autobio is already OFF.');
-      await updateSetting('autobio', 'false');
-      await m.reply('❌ Autobio has been turned OFF.');
-    } else {
-      await m.reply(`📄 Current autobio setting: ${isEnabled ? 'ON' : 'OFF'}\n\nUse _${prefix}autobio on_ or _${prefix}autobio off_ to change it.`);
-    }
-  });
-});
 
 
 dreaded({
