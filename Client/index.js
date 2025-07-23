@@ -61,6 +61,10 @@ const sessionName = path.join(__dirname, '..', 'Session');
 const groupEvents = require("../Handler/eventHandler");
 const groupEvents2 = require("../Handler/eventHandler2");
 const connectionHandler = require('../Handler/connectionHandler');
+const handleMessageHandler = require('../Handler/messageHandler');
+const handleGroupParticipants = require('../Handler/groupParticipantHandler');
+const handleCall = require('../Handler/callHandler');
+
 
 let cachedSettings = null;
 let lastSettingsFetch = 0;
@@ -127,141 +131,14 @@ client.ev.on("connection.update", async (update) => {
 }); 
 
     
+client.ev.on("group-participants.update", handleGroupParticipants(client, groupCache));
+
+client.ws.on("CB:call", handleCall(client));
+
+client.ev.on("messages.upsert", handleMessageHandler(client, store, groupCache));
     
 
-    client.ev.on('group-participants.update', async (event) => {
-        try {
-            console.log(`Group participants updated: ${event.id}`);
-            const metadata = await client.groupMetadata(event.id);
-            groupCache.set(event.id, metadata);
-            
-            
-            
-            groupEvents(client, event);
-            groupEvents2(client, event);
-        } catch (error) {
-            console.error(`Error updating group metadata cache for ${event.id}:`, error);
-           
-            groupEvents(client, event);
-            groupEvents2(client, event);
-        }
-    });
-
-    const processedCalls = new Set();
-
-    client.ws.on('CB:call', async (json) => {
-        const settings = await getCachedSettings();
-        if (!settings?.anticall) return;
-        const callId = json.content[0].attrs['call-id'];
-        const callerJid = json.content[0].attrs['call-creator'];
-        const callerNumber = callerJid.replace(/[@.a-z]/g, "");
-
-        if (processedCalls.has(callId)) {
-            return;
-        }
-        processedCalls.add(callId);
-
-        try {
-            await client.rejectCall(callId, callerJid);
-            await client.sendMessage(callerJid, { text: "You will be banned for calling. Contact the owner!" });
-
-            const bannedUsers = await getBannedUsers();
-            if (!bannedUsers.includes(callerNumber)) {
-                await banUser(callerNumber);
-            }
-        } catch (error) {
-            console.error('Error handling call:', error);
-        }
-    });
-
-    client.ev.on("messages.upsert", async (chatUpdate) => {
-  const settings = await getCachedSettings(); 
-  if (!settings) return;
-
-  const { autoread, autolike, autoview, presence, reactEmoji } = settings;
-
-  try {
-    let mek = chatUpdate.messages[0];
-    if (!mek.message) return;
-    const m = smsg(client, mek, store);
-
-    mek.message = Object.keys(mek.message)[0] === "ephemeralMessage"
-      ? mek.message.ephemeralMessage.message
-      : mek.message;
-
-    const messageContent = mek.message.conversation || mek.message.extendedTextMessage?.text || "";
-    const isGroup = mek.key.remoteJid.endsWith("@g.us");
-    const sender = mek.key.participant || mek.key.remoteJid;
-    const botNumber = await client.decodeJid(client.user.id);
-
-    if (isGroup) {
-      const groupSettings = await getGroupSetting(mek.key.remoteJid);
-      const antilink = groupSettings?.antilink;
-      const linkRegex = /(?:https?:\/\/|www\.|wa\.me\/|chat\.whatsapp\.com\/|t\.me\/|bit\.ly\/|discord\.gg\/)[^\s]+/i;
-const containsLink = linkRegex.test(messageContent);
-
-      if ((antilink === true || antilink === 'true') && containsLink) {
-        const context = await client.getGroupContext(m, botNumber);
-        const { isAdmin, isBotAdmin, groupSender } = context;
-
-        if (!isBotAdmin) return;
-        if (!isAdmin) {
-          await client.sendMessage(mek.key.remoteJid, {
-            text: `🚫 @${groupSender.split("@")[0]}, sending links is prohibited! You have been removed.`,
-            contextInfo: { mentionedJid: [sender] }
-          }, { quoted: mek });
-
-          await client.groupParticipantsUpdate(mek.key.remoteJid, [groupSender], "remove");
-
-          await client.sendMessage(mek.key.remoteJid, {
-            delete: {
-              remoteJid: mek.key.remoteJid,
-              fromMe: false,
-              id: mek.key.id,
-              participant: groupSender
-            }
-          });
-        }
-      }
-    }
-
-    if (mek.message?.protocolMessage?.key) {
-      const nickkk = await client.decodeJid(client.user.id);
-      await handleMessageRevocation(client, mek, nickkk); 
-    } else {
-      handleIncomingMessage(mek);
-    }
-
-    if (autolike && mek.key.remoteJid === "status@broadcast") {
-      const nickk = await client.decodeJid(client.user.id);
-      const emojis = ['🗿', '⌚️', '💠', '👣', '💔', '🤍', '❤️‍🔥', '💣', '🧠', '🦅', '🌻', '🧊', '🛑', '🧸', '👑', '📍', '😅', '🎭', '🎉', '😳', '💯', '🔥', '💫', '🐒', '💗', '❤️‍🔥', '👁️', '👀', '🙌', '🙆', '🌟', '💧', '🦄', '🟢', '🎎', '✅', '🥱', '🌚', '💚', '💕', '😉', '😒'];
-      const randomEmoji = emojis[Math.floor(Math.random() * emojis.length)];
-      await client.sendMessage(mek.key.remoteJid, {
-        react: { text: randomEmoji, key: mek.key }
-      }, {
-        statusJidList: [mek.key.participant, nickk]
-      });
-    }
-
-    if (autoview && mek.key.remoteJid === "status@broadcast") {
-      await client.readMessages([mek.key]);
-    } else if (autoread && mek.key.remoteJid.endsWith('@s.whatsapp.net')) {
-      await client.readMessages([mek.key]);
-    }
-
-    if (presence && mek.key.remoteJid !== "status@broadcast") {
-      const Chat = mek.key.remoteJid;
-      await client.sendPresenceUpdate(presence, Chat);
-    }
-
-    if (!client.public && !mek.key.fromMe && chatUpdate.type === "notify") return;
-
-    handleDreaded(client, m, chatUpdate, store);
-
-  } catch (err) {
-    console.error("❌ Error in upsert handler:", err);
-  }
-});
+    
     // Handle error
     const unhandledRejections = new Map();
     process.on("unhandledRejection", (reason, promise) => {
