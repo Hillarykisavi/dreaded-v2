@@ -15,6 +15,8 @@ const { downloadFromSSSTwitter } = require('../Scrapers/twitter');
 const { Readable } = require("stream");
 const { fetchAllPosts, fetchStories } = require("../Scrapers/igStoriesAndPosts");
 const fetchIgMp4 = require("../Scrapers/instagram");
+const { igStalk } = require("../Scrapers/igstalk");
+
 const mm = require('music-metadata');
 const ffmpeg = require('fluent-ffmpeg');
 
@@ -97,10 +99,52 @@ async function reencodeMp3(buffer) {
 }
 
 
+dreaded({
+  pattern: "igstalk",
+  desc: "Instagram profile stalk",
+  category: "Search",
+  filename: __filename
+}, async (context) => {
+  const { m, args } = context;
+  const username = args[0];
+
+  if (!username) {
+    return client.sendMessage(m.chat, { text: "Please provide a username.\nExample: .igstalk drake" }, { quoted: m });
+  }
+
+  const result = await igStalk(username);
+
+  if (result.error) {
+    return client.sendMessage(m.chat, { text: "Failed to fetch profile." }, { quoted: m });
+  }
+
+  const caption = `
+👤 *${result.name}* (@${result.username})
+✅ Verified: ${result.verified ? "Yes" : "No"}
+
+📝 Bio: ${result.bio}
+📷 Posts: ${result.posts}
+👥 Followers: ${result.followers}
+🔄 Following: ${result.following}
+📊 Engagement Rate: ${result.engagement_rate}%
+`.trim();
+
+  if (!result.profile_pic) {
+ 
+    return client.sendMessage(m.chat, { text: caption }, { quoted: m });
+  }
+
+  
+  return client.sendMessage(m.chat, {
+    image: { url: result.profile_pic },
+    caption
+  }, { quoted: m });
+});
 
 dreaded({
   pattern: "igposts",
   desc: "Fetch Instagram posts",
+alias: ["igpost"],
   category: "Media",
   filename: __filename
 }, async (context) => {
@@ -134,6 +178,7 @@ dreaded({
 dreaded({
   pattern: "igstory",
   desc: "Fetch Instagram stories",
+alias: ["igstories", "stories"],
   category: "Media",
   filename: __filename
 }, async (context) => {
