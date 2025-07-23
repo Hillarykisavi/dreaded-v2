@@ -921,11 +921,9 @@ dreaded({
   desc: "Unban command",
   category: "Settings",
   filename: __filename
-}, async ({ m, args, client }) => {
-
-  await ownerMiddleware({ m, args, client }, async (context) => {
-    const { m, args, client } = context;
-
+}, async (context) => {
+  await ownerMiddleware(context, async () => {
+const { args, m, client} = context;
     let numberToUnban;
 
     if (m.quoted) {
