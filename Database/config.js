@@ -73,6 +73,7 @@ await client.query(`
             mode: 'public',
             presence: 'typing',
             autoview: 'true',
+         antidelete: 'true', 
             autolike: 'true',
             autoread: 'false',
             autobio: 'false',
@@ -99,7 +100,7 @@ await client.query(`
 
 const defaultGroupSettings = {
     antitag: 'true',         
-    antidelete: 'true',               
+                  
     gcpresence: 'false',    
     antiforeign: 'true',   
      
