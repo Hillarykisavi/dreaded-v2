@@ -33,9 +33,14 @@ dreaded({
       const jid = groupContext.getJidFromLid(m.quoted.sender);
       numberToAdd = jid.split('@')[0];
     } else if (m.mentionedJid && m.mentionedJid.length > 0) {
-      numberToAdd = m.mentionedJid[0].split('@')[0];
+      const groupContext = await client.getGroupContext(m, client.user.id);
+      const jid = groupContext.getJidFromLid(m.mentionedJid[0]);
+      numberToAdd = jid.split('@')[0];
     } else {
       numberToAdd = args[0];
+      if (numberToAdd && numberToAdd.includes('@')) {
+        numberToAdd = numberToAdd.split('@')[0];
+      }
     }
 
     if (!numberToAdd || !/^\d+$/.test(numberToAdd)) {
@@ -51,7 +56,6 @@ dreaded({
     await m.reply(`✅ ${numberToAdd} is now a Sudo User!`);
   });
 });
-
 
 dreaded({
   pattern: "anticall",
@@ -475,30 +479,31 @@ dreaded({
   filename: __filename
 }, async (context) => {
   await ownerMiddleware(context, async () => {
-const { args, m, client  } = context;
+    const { args, m, client } = context;
+
     const settings = await getSettings();
     if (!settings) return m.reply('❌ Settings not found.');
 
     const sudoUsers = await getSudoUsers();
     let numberToBan;
 
-        if (m.quoted) {
+    if (m.quoted) {
       const groupContext = await client.getGroupContext(m, client.user.id);
       const jid = groupContext.getJidFromLid(m.quoted.sender);
       numberToBan = jid.split('@')[0];
     } else if (m.mentionedJid && m.mentionedJid.length > 0) {
-      numberToBan = m.mentionedJid[0].split('@')[0];
+      const groupContext = await client.getGroupContext(m, client.user.id);
+      const jid = groupContext.getJidFromLid(m.mentionedJid[0]);
+      numberToBan = jid.split('@')[0];
     } else {
       numberToBan = args[0];
+      if (numberToBan && numberToBan.includes('@')) {
+        numberToBan = numberToBan.split('@')[0];
+      }
     }
 
     if (!numberToBan || !/^\d+$/.test(numberToBan)) {
       return await m.reply('❌ Please provide a valid number or quote a user.');
-    }
-
-
-    if (numberToBan.includes('@s.whatsapp.net')) {
-      numberToBan = numberToBan.split('@')[0];
     }
 
     if (sudoUsers.includes(numberToBan)) {
@@ -569,17 +574,20 @@ const { args, m, client } = context;
 
     let numberToRemove;
 
-        if (m.quoted) {
-      const groupContext = await client.getGroupContext(m, client.user.id);
-      const jid = groupContext.getJidFromLid(m.quoted.sender);
-      numberToAdd = jid.split('@')[0];
-    } else if (m.mentionedJid && m.mentionedJid.length > 0) {
-      numberToAdd = m.mentionedJid[0].split('@')[0];
-    } else {
-      numberToAdd = args[0];
-    }
+    
 
-    if (!numberToAdd || !/^\d+$/.test(numberToAdd)) {
+if (m.quoted) {
+  const groupContext = await client.getGroupContext(m, client.user.id);
+  const jid = groupContext.getJidFromLid(m.quoted.sender);
+  numberToRemove = jid.split('@')[0];
+} else if (m.mentionedJid && m.mentionedJid.length > 0) {
+  const groupContext = await client.getGroupContext(m, client.user.id);
+  const jid = groupContext.getJidFromLid(m.mentionedJid[0]);
+  numberToRemove = jid.split('@')[0];
+} else {
+  numberToRemove = args[0];
+}
+    if (!numberToRemove || !/^\d+$/.test(numberToRemove)) {
       return await m.reply('❌ Please provide a valid number or quote a user.');
     }
 
@@ -913,41 +921,41 @@ dreaded({
   desc: "Unban command",
   category: "Settings",
   filename: __filename
-}, async ({ m, args }) => {
-  
-  
-  
-  
-      await ownerMiddleware(context, async () => {
-const { args, m } = context;
-      
-  
-          let numberToUnban;
-  
-          if (m.quoted) {
-              numberToUnban = m.quoted.sender;
-          } else if (m.mentionedJid && m.mentionedJid.length > 0) {
-              numberToUnban = m.mentionedJid[0];
-          } else {
-              
-numberToUnban = args[0];
-          }
-          
-  
-          if (!numberToUnban) {
-              return await m.reply('❌ Please provide a valid number or quote a user.');
-          }
-  
-         
-          numberToUnban = numberToUnban.replace('@s.whatsapp.net', '').trim();
-  
-          const bannedUsers = await getBannedUsers();
-  
-          if (!bannedUsers.includes(numberToUnban)) {
-              return await m.reply('⚠️ This user was not banned before.');
-          }
-  
-          await unbanUser(numberToUnban);
-          await m.reply(`✅ ${numberToUnban} has been unbanned.`);
-      });
+}, async ({ m, args, client }) => {
+
+  await ownerMiddleware({ m, args, client }, async (context) => {
+    const { m, args, client } = context;
+
+    let numberToUnban;
+
+    if (m.quoted) {
+      const groupContext = await client.getGroupContext(m, client.user.id);
+      const jid = groupContext.getJidFromLid(m.quoted.sender);
+      numberToUnban = jid.split('@')[0];
+    } else if (m.mentionedJid && m.mentionedJid.length > 0) {
+      const groupContext = await client.getGroupContext(m, client.user.id);
+      const jid = groupContext.getJidFromLid(m.mentionedJid[0]);
+      numberToUnban = jid.split('@')[0];
+    } else {
+      numberToUnban = args[0];
+      if (numberToUnban && numberToUnban.includes('@')) {
+        numberToUnban = numberToUnban.split('@')[0];
+      }
+    }
+
+    if (!numberToUnban) {
+      return await m.reply('❌ Please provide a valid number or quote a user.');
+    }
+
+    numberToUnban = numberToUnban.replace(/\D/g, '');
+
+    const bannedUsers = await getBannedUsers();
+
+    if (!bannedUsers.includes(numberToUnban)) {
+      return await m.reply('⚠️ This user was not banned before.');
+    }
+
+    await unbanUser(numberToUnban);
+    await m.reply(`✅ ${numberToUnban} has been unbanned.`);
+  });
 });
