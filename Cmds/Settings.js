@@ -562,7 +562,7 @@ const { args, m } = context;
       }
 
       await updateGroupSetting(jid, 'gcpresence', action ? 'true' : 'false');
-      await m.reply(`✅ GCPresence has been turned ${value.toUpperCase()} for this group. Bot will now simulate fake typing and recording.`);
+      await m.reply(`✅ Typing/recording has been turned ${value.toUpperCase()} for this group.`);
     } else {
       await m.reply(`📄 Current GCPresence setting for this group: ${isEnabled ? 'ON' : 'OFF'}\n\n_Use ${prefix}gcpresence on_ or _${prefix}gcpresence off_ to change it.`);
     }
