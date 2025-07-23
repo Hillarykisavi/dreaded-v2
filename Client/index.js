@@ -1,4 +1,4 @@
-const baz = 'a';
+
 const {
     default: dreadedConnect,
     useMultiFileAuthState,
@@ -13,15 +13,12 @@ const {
 const pino = require("pino");
 const { Boom } = require("@hapi/boom");
 const fs = require("fs");
-const FileType = require("file-type");
-const { exec, spawn, execSync } = require("child_process");
 const axios = require("axios");
 const express = require("express");
 const app = express();
 const port = process.env.PORT || 10000;
 const _ = require("lodash");
-const PhoneNumber = require("awesome-phonenumber");
-const NodeCache = require("node-cache");
+const NodeCache =re("node-cache");
 const { imageToWebp, videoToWebp, writeExifImg, writeExifVid } = require('../lib/exif');
 const { 
     isUrl, 
@@ -61,7 +58,6 @@ const {
 } = require("../Database/adapter");
 
 const { botname } = require('../Env/settings');
-const { DateTime } = require('luxon');
 const commands = global.commands || {};
 const aliases = global.aliases || {};
 const totalCommands = global.totalCommands || 0;
