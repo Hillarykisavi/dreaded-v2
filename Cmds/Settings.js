@@ -475,7 +475,7 @@ dreaded({
   filename: __filename
 }, async (context) => {
   await ownerMiddleware(context, async () => {
-const { args, m } = context;
+const { args, m, client  } = context;
     const settings = await getSettings();
     if (!settings) return m.reply('❌ Settings not found.');
 
