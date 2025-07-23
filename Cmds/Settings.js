@@ -600,7 +600,7 @@ const { args, m } = context;
 
     let response = `*Group Settings for ${jid}*\n`;
     response += `🔘 *Antilink*: ${groupSettings.antilink ? '✅ ON' : '❌ OFF'}\n`;
-    response += `🔘 *Antidelete*: ${groupSettings.antidelete ? '✅ ON' : '❌ OFF'}\n`;
+    
     response += `🔘 *Events*: ${groupSettings.events ? '✅ ON' : '❌ OFF'}\n`;
     
     response += `🔘 *GCPresence*: ${groupSettings.gcpresence ? '✅ ON' : '❌ OFF'}\n`;
@@ -777,6 +777,7 @@ const { client, args, m } = context;
   response += `🔘 *Prefix*: ${settings.prefix}\n`;
   response += `🔘 *Autoread*: ${settings.autoread ? '✅ ON' : '❌ OFF'}\n`;
   response += `🔘 *Autoview Status*: ${settings.autoview ? '✅ ON' : '❌ OFF'}\n`;
+response += `🔘 *Antidelete*: ${settings.antidelete ? '✅ ON' : '❌ OFF'}\n`;
   response += `🔘 *Autolike Status*: ${settings.autolike ? '✅ ON' : '❌ OFF'}\n`;
   response += `🔘 *React Emoji*: ${settings.reactEmoji}\n`;
   response += `🔘 *Sticker Watermark*: ${settings.packname}\n`;
