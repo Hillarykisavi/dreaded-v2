@@ -111,7 +111,7 @@ dreaded({
   const result = await fetchAllPosts(text.trim());
 
   if (result.total === 0) {
-    return m.reply("⚠️ No posts found. The account might be private or has no content.");
+    return m.reply("No posts found. The account might be private or has no content.");
   }
 
   if (result.total > 4) {
@@ -144,7 +144,7 @@ dreaded({
   const result = await fetchStories(text.trim());
 
   if (result.total === 0) {
-    return m.reply("⚠️ No stories found. The account might be private or has no content.");
+    return m.reply("No stories found. The account might be private or has no content.");
   }
 
   if (result.total > 4) {
