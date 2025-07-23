@@ -3,13 +3,13 @@ const { Pool } = require('pg');
 const { database } = require('../Env/settings');
 
 if (!database || database.trim() === '') {
-    console.log('[DB] No DATABASE_URL provided. Skipping Postgres setup and adapting JSON.');
+    
     
     module.exports = {};
     return;
 }
 
-console.log('[DB] Initializing database connection...');
+
 
 const pool = new Pool({
     connectionString: database,
