@@ -13,7 +13,7 @@ const { tmpdir } = require("os");
 const downloadVideo = require('../Scrapers/ytdownload2');
 const { downloadFromSSSTwitter } = require('../Scrapers/twitter');
 const { Readable } = require("stream");
-
+const { fetchAllPosts, fetchStories } = require("../Scrapers/igStoriesAndPosts");
 const fetchIgMp4 = require("../Scrapers/instagram");
 const mm = require('music-metadata');
 const ffmpeg = require('fluent-ffmpeg');
@@ -96,6 +96,73 @@ async function reencodeMp3(buffer) {
   });
 }
 
+
+
+dreaded({
+  pattern: "igposts",
+  desc: "Fetch Instagram posts",
+  category: "Media",
+  filename: __filename
+}, async (context) => {
+  const { client, m, text } = context;
+
+  if (!text) return m.reply("🔍 Provide an Instagram username.");
+
+  const result = await fetchAllPosts(text.trim());
+
+  if (result.total === 0) {
+    return m.reply("⚠️ No posts found. The account might be private or has no content.");
+  }
+
+  if (result.total > 4) {
+    await m.reply(`📸 Found ${result.total} posts. Sending 4 to avoid spam.`);
+  } else {
+    await m.reply(`📸 Found ${result.total} posts.`);
+  }
+
+  const postsToSend = result.items.slice(0, 4);
+
+  for (const item of postsToSend) {
+    if (item.type === "video") {
+      await client.sendMessage(m.chat, { video: { url: item.url } }, { quoted: m });
+    } else {
+      await client.sendMessage(m.chat, { image: { url: item.url } }, { quoted: m });
+    }
+  }
+});
+
+dreaded({
+  pattern: "igstory",
+  desc: "Fetch Instagram stories",
+  category: "Media",
+  filename: __filename
+}, async (context) => {
+  const { client, m, text } = context;
+
+  if (!text) return m.reply("🔍 Provide an Instagram username.");
+
+  const result = await fetchStories(text.trim());
+
+  if (result.total === 0) {
+    return m.reply("⚠️ No stories found. The account might be private or has no content.");
+  }
+
+  if (result.total > 4) {
+    await m.reply(`📖 Found ${result.total} stories. Sending 4 to avoid spam.`);
+  } else {
+    await m.reply(`📖 Found ${result.total} stories.`);
+  }
+
+  const storiesToSend = result.items.slice(0, 4);
+
+  for (const item of storiesToSend) {
+    if (item.type === "video") {
+      await client.sendMessage(m.chat, { video: { url: item.url } }, { quoted: m });
+    } else {
+      await client.sendMessage(m.chat, { image: { url: item.url } }, { quoted: m });
+    }
+  }
+});
 
 dreaded({
   pattern: "play",
