@@ -162,7 +162,7 @@ dreaded({
                   return await m.reply(`✅ Admin events is already ${value.toUpperCase()}.`);
               }
   
-              await updateGroupSetting(jid, 'antidemote', action ? 'true' : 'false');
+              await updateGroupSetting(jid, 'adminevents', action ? 'true' : 'false');
               await m.reply(`✅ Admin events has been turned ${value.toUpperCase()} for this group. Bot will notify when demotions/promotions are done...`);
           } else {
               await m.reply(`📄 Current Admin events setting for this group: ${isEnabled ? 'ON' : 'OFF'}\n\n _Use ${prefix}adminevents on or ${prefix}adminevents off to change it._`);
