@@ -13,22 +13,11 @@ const {
 const pino = require("pino");
 const { Boom } = require("@hapi/boom");
 const fs = require("fs");
-const axios = require("axios");
 const express = require("express");
 const app = express();
 const port = process.env.PORT || 10000;
-const _ = require("lodash");
-const NodeCache =re("node-cache");
-const { imageToWebp, videoToWebp, writeExifImg, writeExifVid } = require('../lib/exif');
-const { 
-    isUrl, 
-    generateMessageTag, 
-    getBuffer, 
-    getSizeMedia, 
-    fetchJson, 
-    await, 
-    sleep 
-} = require('../lib/botFunctions');
+const NodeCache =require("node-cache");
+const { sleep } = require('../lib/botFunctions');
 const handleDreaded = require("./dreaded");
 const { 
     handleIncomingMessage, 
