@@ -22,8 +22,8 @@ function getDefaultStructure() {
             antidelete: true,
             gcpresence: false,
             antiforeign: true,
-            antidemote: false,
-            antipromote: true,
+            adminevents: false,
+           
             events: false,
             antilink: true
         },
