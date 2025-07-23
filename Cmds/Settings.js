@@ -602,11 +602,10 @@ const { args, m } = context;
     response += `🔘 *Antilink*: ${groupSettings.antilink ? '✅ ON' : '❌ OFF'}\n`;
     response += `🔘 *Antidelete*: ${groupSettings.antidelete ? '✅ ON' : '❌ OFF'}\n`;
     response += `🔘 *Events*: ${groupSettings.events ? '✅ ON' : '❌ OFF'}\n`;
-    response += `🔘 *Antitag*: ${groupSettings.antitag ? '✅ ON' : '❌ OFF'}\n`;
+    
     response += `🔘 *GCPresence*: ${groupSettings.gcpresence ? '✅ ON' : '❌ OFF'}\n`;
     response += `🔘 *Antiforeign*: ${groupSettings.antiforeign ? '✅ ON' : '❌ OFF'}\n`;
-    response += `🔘 *Antidemote*: ${groupSettings.antidemote ? '✅ ON' : '❌ OFF'}\n`;
-    response += `🔘 *Antipromote*: ${groupSettings.antipromote ? '✅ ON' : '❌ OFF'}\n`;
+    response += `🔘 *Admin Events*: ${groupSettings.adminevents ? '✅ ON' : '❌ OFF'}\n`;
 
     await m.reply(response);
   });
@@ -781,7 +780,7 @@ const { client, args, m } = context;
   response += `🔘 *Autolike Status*: ${settings.autolike ? '✅ ON' : '❌ OFF'}\n`;
   response += `🔘 *React Emoji*: ${settings.reactEmoji}\n`;
   response += `🔘 *Sticker Watermark*: ${settings.packname}\n`;
-  response += `🔘 *Autobio*: ${settings.autobio ? '✅ ON' : '❌ OFF'}\n`;
+  
   response += `🔘 *Anticall*: ${settings.anticall ? '✅ ON' : '❌ OFF'}\n`;
   response += `🔘 *Presence*: ${settings.presence}\n`;
 
