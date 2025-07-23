@@ -312,7 +312,6 @@ async function getBannedUsers() {
     }
 }
 
-initializeDatabase().catch(console.error);
 
 module.exports = {
     addSudoUser,
@@ -328,5 +327,6 @@ deleteUserHistory,
     updateSetting,
     getGroupSetting,
     updateGroupSetting,
+   initializeDatabase,
     initializeGroupSettings
 };
