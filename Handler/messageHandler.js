@@ -1,6 +1,6 @@
 const { smsg } = require('../Handler/smsg');
 const { getGroupSetting, getSettings, getBannedUsers, banUser } = require("../Database/adapter");
-const handleDreaded = require("../dreaded");
+const handleDreaded = require("../Client/dreaded");
 
 module.exports = (client, store, groupCache) => async (chatUpdate) => {
   const settings = await getSettings();
