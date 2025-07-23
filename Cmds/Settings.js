@@ -564,7 +564,7 @@ dreaded({
   filename: __filename
 }, async (context) => {
   await ownerMiddleware(context, async () => {
-const { args, m } = context;
+const { args, m, client } = context;
     
 
     let numberToRemove;
