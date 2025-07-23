@@ -11,8 +11,7 @@ const Events = async (client, Fortu) => {
 
         const groupSettings = await getGroupSetting(Fortu.id);
         const events = groupSettings?.events;
-        const antidemote = groupSettings?.antidemote;
-        const antipromote = groupSettings?.antipromote;
+        const adminevents = groupSettings?. adminevents;
         const sudoUsers = await getSudoUsers();
 
         const DevDreaded = Array.isArray(sudoUsers) ? sudoUsers : [];
@@ -46,7 +45,7 @@ const Events = async (client, Fortu) => {
                     mentions: [num],
                 });
             } else if (Fortu.action === "demote") {
-                if (antidemote) {
+                if (adminevents) {
                     const isBotAction = Fortu.author === Myself;
                     await client.sendMessage(Fortu.id, {
                         text: isBotAction
@@ -56,7 +55,7 @@ const Events = async (client, Fortu) => {
                     });
                 }
             } else if (Fortu.action === "promote") {
-                if (antipromote) {
+                if (adminevents) {
                     const isBotAction = Fortu.author === Myself;
                     await client.sendMessage(Fortu.id, {
                         text: isBotAction
