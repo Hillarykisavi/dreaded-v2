@@ -1,13 +1,13 @@
-const baz = 'a'
+const baz = 'a';
 const {
-  default: dreadedConnect,
-  useMultiFileAuthState,
-  DisconnectReason,
-  fetchLatestBaileysVersion,
-  downloadContentFromMessage,
-  jidDecode,
-  proto,
-  getContentType,
+    default: dreadedConnect,
+    useMultiFileAuthState,
+    DisconnectReason,
+    fetchLatestBaileysVersion,
+    downloadContentFromMessage,
+    jidDecode,
+    proto,
+    getContentType,
 } = require("@whiskeysockets/baileys");
 
 const pino = require("pino");
@@ -23,19 +23,27 @@ const _ = require("lodash");
 const PhoneNumber = require("awesome-phonenumber");
 const NodeCache = require("node-cache");
 const { imageToWebp, videoToWebp, writeExifImg, writeExifVid } = require('../lib/exif');
-const { isUrl, generateMessageTag, getBuffer, getSizeMedia, fetchJson, await, sleep } = require('../lib/botFunctions');
+const { 
+    isUrl, 
+    generateMessageTag, 
+    getBuffer, 
+    getSizeMedia, 
+    fetchJson, 
+    await, 
+    sleep 
+} = require('../lib/botFunctions');
 const handleDreaded = require("./dreaded");
-const  { handleIncomingMessage, handleMessageRevocation } = require('../Functions/antidelete');
-
+const { 
+    handleIncomingMessage, 
+    handleMessageRevocation 
+} = require('../Functions/antidelete');
 const { initializeClientUtils } = require('../Client/clientUtils'); 
-
 
 const logger = pino({
     level: 'silent' 
 });
 
 const makeInMemoryStore = require('../Client/store.js'); 
-
 const store = makeInMemoryStore({
     logger: logger.child({
         stream: 'store'
@@ -43,16 +51,21 @@ const store = makeInMemoryStore({
 });
 
 const groupCache = require("../Client/groupCache");
-
 const authenticationn = require('../Auth/auth.js');
 const { smsg } = require('../Handler/smsg');
-const { getSettings, getBannedUsers, banUser, getGroupSetting } = require("../Database/adapter");
+const { 
+    getSettings, 
+    getBannedUsers, 
+    banUser, 
+    getGroupSetting 
+} = require("../Database/adapter");
 
 const { botname } = require('../Env/settings');
 const { DateTime } = require('luxon');
 const commands = global.commands || {};
 const aliases = global.aliases || {};
 const totalCommands = global.totalCommands || 0;
+
 authenticationn();
 
 const path = require('path');
@@ -65,18 +78,17 @@ const handleMessageHandler = require('../Handler/messageHandler');
 const handleGroupParticipants = require('../Handler/groupParticipantHandler');
 const handleCall = require('../Handler/callHandler');
 
-
 let cachedSettings = null;
 let lastSettingsFetch = 0;
 const SETTINGS_CACHE_DURATION = 10_000;
 
 async function getCachedSettings() {
-  const now = Date.now();
-  if (!cachedSettings || now - lastSettingsFetch > SETTINGS_CACHE_DURATION) {
-    cachedSettings = await getSettings();
-    lastSettingsFetch = now;
-  }
-  return cachedSettings;
+    const now = Date.now();
+    if (!cachedSettings || now - lastSettingsFetch > SETTINGS_CACHE_DURATION) {
+        cachedSettings = await getSettings();
+        lastSettingsFetch = now;
+    }
+    return cachedSettings;
 }
 
 async function startDreaded() {
@@ -85,12 +97,12 @@ async function startDreaded() {
 
     const { autobio, mode, anticall } = settings;
 
-    const { saveCreds, state } = await useMultiFileAuthState(sessionName)
+    const { saveCreds, state } = await useMultiFileAuthState(sessionName);
     const client = dreadedConnect({
         logger: pino({ level: 'silent' }),
         printQRInTerminal: true,
         version: [2, 3000, 1023223821],
-        browser: [`DREADED`,'Safari','3.0'],
+        browser: ['DREADED', 'Safari', '3.0'],
         fireInitQueries: false,
         shouldSyncHistoryMessage: true,
         downloadHistory: false,
@@ -103,41 +115,36 @@ async function startDreaded() {
         cachedGroupMetadata: async (jid) => {
             const cached = groupCache.get(jid);
             if (cached) {
-                
                 return cached;
             }
             return null;
         },
+        
         getMessage: async (key) => {
             if (store) {
-                const mssg = await store.loadMessage(key.remoteJid, key.id)
-                return mssg.message || undefined
+                const mssg = await store.loadMessage(key.remoteJid, key.id);
+                return mssg.message || undefined;
             }
             return {
                 conversation: "HERE"
-            }
+            };
         }
     });
 
-    
     initializeClientUtils(client, store, groupCache);
-
     store.bind(client.ev);
 
-    setInterval(() => { store.writeToFile("store.json"); }, 3000);
+    setInterval(() => { 
+        store.writeToFile("store.json"); 
+    }, 3000);
 
-client.ev.on("connection.update", async (update) => {
-  await connectionHandler(client, update, startDreaded);
-}); 
-
+    client.ev.on("connection.update", async (update) => {
+        await connectionHandler(client, update, startDreaded);
+    }); 
     
-client.ev.on("group-participants.update", handleGroupParticipants(client, groupCache));
-
-client.ws.on("CB:call", handleCall(client));
-
-client.ev.on("messages.upsert", handleMessageHandler(client, store, groupCache));
-    
-
+    client.ev.on("group-participants.update", handleGroupParticipants(client, groupCache));
+    client.ws.on("CB:call", handleCall(client));
+    client.ev.on("messages.upsert", handleMessageHandler(client, store, groupCache));
     
     // Handle error
     const unhandledRejections = new Map();
@@ -145,18 +152,17 @@ client.ev.on("messages.upsert", handleMessageHandler(client, store, groupCache))
         unhandledRejections.set(promise, reason);
         console.log("Unhandled Rejection at:", promise, "reason:", reason);
     });
+    
     process.on("rejectionHandled", (promise) => {
         unhandledRejections.delete(promise);
     });
+    
     process.on("Something went wrong", function (err) {
         console.log("Caught exception: ", err);
     });
 
     client.public = true;
     client.serializeM = (m) => smsg(client, m, store);
-
-    
-
     client.ev.on("creds.update", saveCreds);
 }
 
@@ -166,7 +172,9 @@ app.get("/", (req, res) => {
     res.sendFile(__dirname + '/index.html'); 
 });
 
-app.listen(port, () => console.log(`Server listening on port http://localhost:${port}`));
+app.listen(port, () => {
+    console.log(`Server listening on port http://localhost:${port}`);
+});
 
 startDreaded();
 
