@@ -105,7 +105,7 @@ dreaded({
   category: "Search",
   filename: __filename
 }, async (context) => {
-  const { m, args } = context;
+  const { m, args, client } = context;
   const username = args[0];
 
   if (!username) {
