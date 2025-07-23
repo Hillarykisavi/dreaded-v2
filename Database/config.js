@@ -102,8 +102,8 @@ const defaultGroupSettings = {
     antidelete: 'true',               
     gcpresence: 'false',    
     antiforeign: 'true',   
-    antidemote: 'false',      
-    antipromote: 'false',
+     
+    adminevents: 'false',
     events: 'false',
     antilink: 'true'
 };
