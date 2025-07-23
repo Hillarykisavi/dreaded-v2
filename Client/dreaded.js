@@ -107,7 +107,7 @@ module.exports = dreaded = async (client, m, chatUpdate, store) => {
         const DevDreaded = Array.isArray(sudoUsers) ? sudoUsers : [];
         const Owner = DevDreaded.map(v => v.replace(mentionRegex, "") + "@s.whatsapp.net").includes(groupSender);
 
-        const userJid = groupSender.replace?.(whatsappSuffixRegex, '') || '';
+        const userJid = groupSender?.replace(whatsappSuffixRegex, '') || m.sender?.replace(whatsappSuffixRegex, '') || '';
 
 const userStatus = {
     isMe: itsMe,
