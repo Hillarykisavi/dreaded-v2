@@ -28,8 +28,6 @@ try {
 
 const botNumber = await client.decodeJid(client.user.id);  
 
-const { initializeClientUtils } = require("../Client/clientUtils");
-initializeClientUtils(client, store);
 
 const {
   groupMetadata,
