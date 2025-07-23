@@ -278,9 +278,7 @@ const containsLink = linkRegex.test(messageContent);
     client.public = true;
     client.serializeM = (m) => smsg(client, m, store);
 
-    client.ev.on("connection.update", async (update) => {
-        await connectionHandler(client, update, startDreaded);
-    });
+    
 
     client.ev.on("creds.update", saveCreds);
 }
