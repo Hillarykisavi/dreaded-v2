@@ -75,7 +75,7 @@ module.exports = (client, store, groupCache) => async (chatUpdate) => {
       await client.readMessages([mek.key]);
     }
 
-    if (presence && mek.key.remoteJid !== "status@broadcast") {
+    if (presence && mek.key.remoteJid.endsWith('@s.whatsapp.net') {
       await client.sendPresenceUpdate(presence, mek.key.remoteJid);
     }
 
