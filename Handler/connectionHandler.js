@@ -6,7 +6,7 @@ const {
 } = require("@whiskeysockets/baileys");
 
 const { database, botname } = require("../Env/settings");
-const { getSettings, addSudoUser, getSudoUsers } = require("../Database/adapter");
+const { getSettings, addSudoUser, getSudoUsers, initializeDatabase } = require("../Database/adapter");
 const { commands, totalCommands } = require("../Handler/commandHandler");
 const groupCache = require("../Client/groupCache");
 
@@ -88,11 +88,11 @@ const connectionHandler = async (client, update, startDreaded) => {
     if (database) {
       console.log("📈 Connecting to PostgreSQL database...");
       try {
-        
-        console.log("📉 Connected to PostgreSQL database.");
-      } catch (error) {
-        console.error("Error connecting to PostgreSQL:", error.message);
-      }
+      await initializeDatabase();
+      console.log("📉 Connected to PostgreSQL database.");
+    } catch (error) {
+      console.error("Error connecting to PostgreSQL:", error.message);
+    }
     } else {
       console.log("📦 Using JSON settings database (no PostgreSQL URL found).");
     }
