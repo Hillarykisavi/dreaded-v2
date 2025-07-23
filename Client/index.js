@@ -38,19 +38,6 @@ const store = makeInMemoryStore({
 
 const groupCache = require("../Client/groupCache");
 const authenticationn = require('../Auth/auth.js');
-const { smsg } = require('../Handler/smsg');
-const { 
-    getSettings, 
-    getBannedUsers, 
-    banUser, 
-    getGroupSetting 
-} = require("../Database/adapter");
-
-const { botname } = require('../Env/settings');
-const commands = global.commands || {};
-const aliases = global.aliases || {};
-const totalCommands = global.totalCommands || 0;
-
 authenticationn();
 
 const path = require('path');
@@ -63,25 +50,10 @@ const handleMessageHandler = require('../Handler/messageHandler');
 const handleGroupParticipants = require('../Handler/groupParticipantHandler');
 const handleCall = require('../Handler/callHandler');
 
-let cachedSettings = null;
-let lastSettingsFetch = 0;
-const SETTINGS_CACHE_DURATION = 10_000;
-
-async function getCachedSettings() {
-    const now = Date.now();
-    if (!cachedSettings || now - lastSettingsFetch > SETTINGS_CACHE_DURATION) {
-        cachedSettings = await getSettings();
-        lastSettingsFetch = now;
-    }
-    return cachedSettings;
-}
 
 async function startDreaded() {
-    let settings = await getCachedSettings();
-    if (!settings) return;
-
-    const { autobio, mode, anticall } = settings;
-
+    
+    
     const { saveCreds, state } = await useMultiFileAuthState(sessionName);
     const client = dreadedConnect({
         logger: pino({ level: 'silent' }),
@@ -121,7 +93,7 @@ async function startDreaded() {
 
     setInterval(() => { 
         store.writeToFile("store.json"); 
-    }, 3000);
+    }, 30000);
 
     client.ev.on("connection.update", async (update) => {
         await connectionHandler(client, update, startDreaded);
