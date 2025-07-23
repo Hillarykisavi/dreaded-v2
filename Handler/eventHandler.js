@@ -1,29 +1,22 @@
 const { getGroupSetting, getSudoUsers } = require("../Database/adapter");
 const botname = process.env.BOTNAME || 'DREADED';
 
-
 const Events = async (client, Fortu) => {
     const Myself = await client.decodeJid(client.user.id);
 
     try {
-        
-
         let metadata = await client.groupMetadata(Fortu.id);
         let participants = Fortu.participants;
         let desc = metadata.desc || "No Description";
 
-
-const groupSettings = await getGroupSetting(Fortu.id);
+        const groupSettings = await getGroupSetting(Fortu.id);
         const events = groupSettings?.events;
         const antidemote = groupSettings?.antidemote;
         const antipromote = groupSettings?.antipromote;
-const sudoUsers = await getSudoUsers();
+        const sudoUsers = await getSudoUsers();
 
-
-const DevDreaded = Array.isArray(sudoUsers) ? sudoUsers : [];
-const currentDevs = DevDreaded.map((v) => v.replace(/[^0-9]/g, "") + "@s.whatsapp.net");
-
-
+        const DevDreaded = Array.isArray(sudoUsers) ? sudoUsers : [];
+        const currentDevs = DevDreaded.map((v) => v.replace(/[^0-9]/g, "") + "@s.whatsapp.net");
 
         for (let num of participants) {
             let dpuser;
@@ -36,7 +29,6 @@ const currentDevs = DevDreaded.map((v) => v.replace(/[^0-9]/g, "") + "@s.whatsap
 
             if (events && Fortu.action === "add") {
                 let userName = num;
-
                 let Welcometext = `Holla @${userName.split("@")[0]} 👋\n\nWelcome to ${metadata.subject}.\n\nGroup Description: ${desc}\n\nThank You.\n\nThis is an automated message sent by ${botname} via Baileys.`;
 
                 await client.sendMessage(Fortu.id, {
@@ -46,7 +38,6 @@ const currentDevs = DevDreaded.map((v) => v.replace(/[^0-9]/g, "") + "@s.whatsap
                 });
             } else if (events && Fortu.action === "remove") {
                 let userName2 = num;
-
                 let Lefttext = `Goodbye @${userName2.split("@")[0]} 👋, probably not gonna miss you`;
 
                 await client.sendMessage(Fortu.id, {
@@ -56,54 +47,23 @@ const currentDevs = DevDreaded.map((v) => v.replace(/[^0-9]/g, "") + "@s.whatsap
                 });
             } else if (Fortu.action === "demote") {
                 if (antidemote) {
-                    if (
-                        Fortu.author == metadata.owner || 
-                        Fortu.author == Myself || 
-                        Fortu.author == Fortu.participants[0] || 
-                        currentDevs.includes(Fortu.author)
-                    ) {
-                        await client.sendMessage(Fortu.id, {
-                            text: `A super user has demoted @${(Fortu.participants[0]).split("@")[0]}`,
-                            mentions: [Fortu.participants[0]]
-                        });
-                        return;
-                    }
-
-                    await client.groupParticipantsUpdate(Fortu.id, [Fortu.author], "demote");
-                    await client.groupParticipantsUpdate(Fortu.id, [Fortu.participants[0]], "promote");
-
-                    client.sendMessage(
-                        Fortu.id,
-                        {
-                            text: `@${(Fortu.author).split("@")[0]} you will be demoted for demoting @${(Fortu.participants[0]).split("@")[0]}.\n\nAntidemote is active and only super users are allowed to demote!`,
-                            mentions: [Fortu.author, Fortu.participants[0]]
-                        }
-                    );
+                    const isBotAction = Fortu.author === Myself;
+                    await client.sendMessage(Fortu.id, {
+                        text: isBotAction
+                            ? `I have demoted @${Fortu.participants[0].split("@")[0]}`
+                            : `@${Fortu.author.split("@")[0]} has demoted @${Fortu.participants[0].split("@")[0]}`,
+                        mentions: [Fortu.author, Fortu.participants[0]]
+                    });
                 }
             } else if (Fortu.action === "promote") {
                 if (antipromote) {
-                    if (
-                        Fortu.author == metadata.owner || 
-                        Fortu.author == Myself || 
-                        Fortu.author == Fortu.participants[0] || 
-                        currentDevs.includes(Fortu.author)
-                    ) {
-                        await client.sendMessage(Fortu.id, {
-                            text: `A super user has promoted @${(Fortu.participants[0]).split("@")[0]}`,
-                            mentions: [Fortu.participants[0]]
-                        });
-                        return;
-                    }
-
-                    await client.groupParticipantsUpdate(Fortu.id, [Fortu.author, Fortu.participants[0]], "demote");
-
-                    client.sendMessage(
-                        Fortu.id,
-                        {
-                            text: `@${(Fortu.author).split("@")[0]} you have been demoted for promoting @${(Fortu.participants[0]).split("@")[0]} to admin. @${(Fortu.participants[0]).split("@")[0]} has also been demoted.\n\nAntipromote is active and only super users can promote!`,
-                            mentions: [Fortu.author, Fortu.participants[0]]
-                        }
-                    );
+                    const isBotAction = Fortu.author === Myself;
+                    await client.sendMessage(Fortu.id, {
+                        text: isBotAction
+                            ? `I have promoted @${Fortu.participants[0].split("@")[0]}`
+                            : `@${Fortu.author.split("@")[0]} has promoted @${Fortu.participants[0].split("@")[0]}`,
+                        mentions: [Fortu.author, Fortu.participants[0]]
+                    });
                 }
             }
         }
@@ -112,4 +72,4 @@ const currentDevs = DevDreaded.map((v) => v.replace(/[^0-9]/g, "") + "@s.whatsap
     }
 };
 
-module.exports = Events; 
+module.exports = Events;
