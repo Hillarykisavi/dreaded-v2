@@ -101,12 +101,12 @@ alias: ["list", "help", "commands", "cmds"],
     { name: 'Owner', emoji: '👑' },
     { name: 'Heroku', emoji: '🏷️' },
     { name: 'Wa-Privacy', emoji: '🪀' },
-    { name: 'Games', emoji: '🎮' },
     { name: 'Groups', emoji: '👥' },
     { name: 'AI', emoji: '🤖' },
     { name: 'Coding', emoji: '💻' },
     { name: 'Search', emoji: '🔍' },
     { name: 'Media', emoji: '🎥' },
+     { name: 'Conversion', emoji: '♻️' },
     { name: 'Editting', emoji: '✂️' },
     { name: 'Utils', emoji: '👾' }
   ];
