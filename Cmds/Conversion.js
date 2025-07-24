@@ -3,6 +3,9 @@ const ffmpeg = require("fluent-ffmpeg");
 const { tmpdir } = require("os");
 const path = require("path");
 const { exec } = require("child_process");
+const util = require("util");
+const execPromise = util.promisify(exec);
+
 
 dreaded({
   pattern: "toaudio",
@@ -152,7 +155,7 @@ dreaded({
 
     await fs.promises.writeFile(tmpPath, stream);
 
-    await exec(`ffmpeg -i ${tmpPath} ${outPath}`);
+    await execPromise(`ffmpeg -y -i "${tmpPath}" "${outPath}"`);
 
     await client.sendMessage(m.chat, {
       image: fs.readFileSync(outPath),
