@@ -25,7 +25,7 @@ dreaded({
     .toFormat("mp3")
     .on("end", async () => {
       const audioBuffer = fs.readFileSync(outputPath);
-      await client.sendMessage(m.chat, { audio: audioBuffer, mimetype: "audio/mp4", ptt: true }, { quoted: m });
+      await client.sendMessage(m.chat, { audio: audioBuffer, mimetype: "audio/mp4" }, { quoted: m });
       fs.unlinkSync(inputPath);
       fs.unlinkSync(outputPath);
     })
@@ -42,8 +42,8 @@ dreaded({
   desc: "Trim quoted video/audio",
   category: "Conversion",
   filename: __filename
-}, async ({ client, m, match }) => {
-  const args = match.split(" ");
+}, async ({ client, m, text }) => {
+  const args = text.split(" ");
   const start = parseInt(args[0]);
   const end = parseInt(args[1]);
 
@@ -83,84 +83,77 @@ dreaded({
 
 
 
-const ffprobe = require("fluent-ffmpeg").ffprobe;
-
-const mergeQueue = {};
 
 dreaded({
-  pattern: "merge",
-  desc: "Send image + audio separately using same command to merge them",
+  pattern: "tovn",
+  desc: "Convert quoted video or audio to voice note",
   category: "Conversion",
   filename: __filename
 }, async ({ client, m }) => {
-  const user = m.sender;
-  const quoted = m.quoted;
-
-  if (!quoted || !["imageMessage", "audioMessage"].includes(quoted.mtype)) {
-    return m.reply("❌ Reply to an *image* or *audio* with !merge.\nFirst send image → !merge\nThen send audio → !merge");
+  if (!m.quoted || !["videoMessage", "audioMessage"].includes(m.quoted.mtype)) {
+    return m.reply("Reply to a video or audio.");
   }
 
-  const buffer = await quoted.download();
-  const type = quoted.mtype === "imageMessage" ? "image" : "audio";
-  const ext = type === "image" ? "jpg" : "mp3";
-  const filePath = path.join(tmpdir(), `${type}_${user.replace(/[^0-9]/g, "")}.${ext}`);
+  const media = await m.quoted.download();
+  const input = path.join(tmpdir(), `in_${Date.now()}.dat`);
+  const output = path.join(tmpdir(), `out_${Date.now()}.mp3`);
 
-  fs.writeFileSync(filePath, buffer);
+  fs.writeFileSync(input, media);
 
-  mergeQueue[user] = mergeQueue[user] || {};
-  mergeQueue[user][type] = filePath;
+  ffmpeg(input)
+    .audioCodec("libmp3lame")
+    .save(output)
+    .on("end", async () => {
+      const voice = fs.readFileSync(output);
+      await client.sendMessage(m.chat, {
+        audio: voice,
+        mimetype: "audio/mp4",
+        ptt: true
+      }, { quoted: m });
 
-  if (type === "image" && !mergeQueue[user].audio) {
-    return m.reply("✅ Image received. Now reply with an audio and send !merge again.");
-  }
-
-  if (type === "audio" && !mergeQueue[user].image) {
-    return m.reply("✅ Audio received. Now reply with an image and send !merge again.");
-  }
-
-  if (mergeQueue[user].image && mergeQueue[user].audio) {
-    ffprobe(mergeQueue[user].audio, (err, metadata) => {
-      if (err) {
-        console.error("FFprobe error:", err);
-        return m.reply("❌ Failed to read audio duration.");
-      }
-
-      const duration = metadata.format.duration;
-      const outPath = path.join(tmpdir(), `merged_${Date.now()}.mp4`);
-
-      m.reply("🔄 Merging image and audio...");
-
-      ffmpeg()
-        .input(mergeQueue[user].image)
-        .loop()
-        .input(mergeQueue[user].audio)
-        .duration(duration)
-        .outputOptions([
-          "-c:v libx264",
-          "-preset veryfast",
-          "-tune stillimage",
-          "-c:a aac",
-          "-b:a 192k",
-          "-shortest",
-          "-movflags +faststart"
-        ])
-        .save(outPath)
-        .on("end", async () => {
-          const vid = fs.readFileSync(outPath);
-          await client.sendMessage(m.chat, { video: vid, mimetype: "video/mp4" }, { quoted: m });
-
-          fs.unlinkSync(mergeQueue[user].image);
-          fs.unlinkSync(mergeQueue[user].audio);
-          fs.unlinkSync(outPath);
-          delete mergeQueue[user];
-
-          await m.reply("✅ Merge complete. Video sent.");
-        })
-        .on("error", (err) => {
-          console.error("FFmpeg error:", err);
-          m.reply("❌ Failed to merge.");
-          delete mergeQueue[user];
-        });
+      fs.unlinkSync(input);
+      fs.unlinkSync(output);
+    })
+    .on("error", err => {
+      console.error(err);
+      m.reply("❌ Failed to convert.");
     });
+});
+
+
+dreaded({
+  pattern: "toimg",
+  desc: "Convert static sticker to image",
+  category: "Convert",
+  filename: __filename
+}, async ({ client, m }) => {
+  try {
+    const quoted = m.quoted;
+    if (!quoted || quoted.mtype !== "stickerMessage") {
+      return client.sendMessage(m.chat, { text: "❌ Reply to a *sticker* to convert it to image." }, { quoted: m });
+    }
+
+    if (quoted.isAnimated || quoted.isLottie || quoted.mimetype !== 'image/webp') {
+      return client.sendMessage(m.chat, { text: "❌ Only *static* stickers are supported." }, { quoted: m });
+    }
+
+    const stream = await quoted.download();
+    const tmpPath = "./temp/sticker.webp";
+    const outPath = "./temp/image.jpg";
+
+    await fs.promises.writeFile(tmpPath, stream);
+
+    await exec(`ffmpeg -i ${tmpPath} ${outPath}`);
+
+    await client.sendMessage(m.chat, {
+      image: fs.readFileSync(outPath),
+      caption: "Converted sticker to image."
+    }, { quoted: m });
+
+    fs.unlinkSync(tmpPath);
+    fs.unlinkSync(outPath);
+
+  } catch (err) {
+    await client.sendMessage(m.chat, { text: "❌ Failed to convert sticker to image." }, { quoted: m });
   }
 });
