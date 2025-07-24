@@ -159,7 +159,7 @@ dreaded({
     fs.unlinkSync(outPath);
 
   } catch (err) {
-    await client.sendMessage(m.chat, { text: "❌ Failed to convert sticker to image." }, { quoted: m });
+    await client.sendMessage(m.chat, { text: "❌ Failed to convert sticker to image." + err }, { quoted: m });
   }
 });
 
