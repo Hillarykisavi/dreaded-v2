@@ -176,7 +176,7 @@ dreaded({
   const isSticker = m.quoted.mtype === "stickerMessage";
   const isVideo = m.quoted.mtype === "videoMessage";
 
-  if (isSticker && !m.quoted.message.isAnimated)
+  if (isSticker && !m.quoted.isAnimated)
     return m.reply("This sticker is static. Only *animated* stickers are supported.");
 
   if (isVideo && m.quoted.seconds > 10)
