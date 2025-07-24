@@ -191,14 +191,15 @@ dreaded({
     return m.reply("Only videos of 10 seconds or less are supported.");
 
   const extension = isSticker ? ".webp" : ".mp4";
-const media = await m.quoted.download();
-const inputPath = path.join(tmpdir(), `input_${Date.now()}${extension}`);
-const outputPath = path.join(tmpdir(), `output_${Date.now()}.gif`);
+  const media = await m.quoted.download();
+  if (!Buffer.isBuffer(media)) return m.reply("Failed to download media.");
 
-fs.writeFileSync(inputPath, media);
-
+  const inputPath = path.join(tmpdir(), `input_${Date.now()}${extension}`);
+  const outputPath = path.join(tmpdir(), `output_${Date.now()}.gif`);
+  fs.writeFileSync(inputPath, media);
 
   ffmpeg(inputPath)
+    .inputFormat(isSticker ? "webp" : undefined)
     .outputOptions("-vf", "fps=10,scale=320:-1:flags=lanczos")
     .outputOptions("-loop", "0")
     .toFormat("gif")
@@ -209,8 +210,8 @@ fs.writeFileSync(inputPath, media);
       fs.unlinkSync(outputPath);
     })
     .on("error", err => {
-      console.error(err);
-      m.reply("Failed to convert to GIF." + err);
+      console.error("❌ FFmpeg Error:", err.message);
+      m.reply("❌ Failed to convert to GIF.\n" + err.message);
       fs.existsSync(inputPath) && fs.unlinkSync(inputPath);
       fs.existsSync(outputPath) && fs.unlinkSync(outputPath);
     })
