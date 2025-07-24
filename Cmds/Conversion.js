@@ -142,6 +142,9 @@ dreaded({
       return client.sendMessage(m.chat, { text: "❌ Only *static* stickers are supported." }, { quoted: m });
     }
 
+    
+    fs.mkdirSync("./temp", { recursive: true });
+
     const stream = await quoted.download();
     const tmpPath = "./temp/sticker.webp";
     const outPath = "./temp/image.jpg";
@@ -152,16 +155,17 @@ dreaded({
 
     await client.sendMessage(m.chat, {
       image: fs.readFileSync(outPath),
-      caption: "Converted sticker to image."
+      caption: "✅ Sticker converted to image."
     }, { quoted: m });
 
     fs.unlinkSync(tmpPath);
     fs.unlinkSync(outPath);
 
   } catch (err) {
-    await client.sendMessage(m.chat, { text: "❌ Failed to convert sticker to image." + err }, { quoted: m });
+    await client.sendMessage(m.chat, { text: "❌ Failed to convert sticker to image.\n" + err.message }, { quoted: m });
   }
 });
+
 
 
 dreaded({
@@ -182,11 +186,13 @@ dreaded({
   if (isVideo && m.quoted.seconds > 10)
     return m.reply("Only videos of 10 seconds or less are supported.");
 
-  const media = await m.quoted.download();
-  const inputPath = path.join(tmpdir(), `input_${Date.now()}`);
-  const outputPath = path.join(tmpdir(), `output_${Date.now()}.gif`);
+  const extension = isSticker ? ".webp" : ".mp4";
+const media = await m.quoted.download();
+const inputPath = path.join(tmpdir(), `input_${Date.now()}${extension}`);
+const outputPath = path.join(tmpdir(), `output_${Date.now()}.gif`);
 
-  fs.writeFileSync(inputPath, media);
+fs.writeFileSync(inputPath, media);
+
 
   ffmpeg(inputPath)
     .outputOptions("-vf", "fps=10,scale=320:-1:flags=lanczos")
