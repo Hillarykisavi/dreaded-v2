@@ -124,7 +124,7 @@ dreaded({
 dreaded({
   pattern: "toimg",
   desc: "Convert static sticker to image",
-  category: "Convert",
+  category: "Conversion",
   filename: __filename
 }, async ({ client, m }) => {
   try {
