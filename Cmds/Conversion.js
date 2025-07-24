@@ -82,6 +82,9 @@ dreaded({
 
 
 
+
+const ffprobe = require("fluent-ffmpeg").ffprobe;
+
 const mergeQueue = {};
 
 dreaded({
@@ -104,11 +107,9 @@ dreaded({
 
   fs.writeFileSync(filePath, buffer);
 
-  
   mergeQueue[user] = mergeQueue[user] || {};
   mergeQueue[user][type] = filePath;
 
-  
   if (type === "image" && !mergeQueue[user].audio) {
     return m.reply("✅ Image received. Now reply with an audio and send !merge again.");
   }
@@ -117,33 +118,49 @@ dreaded({
     return m.reply("✅ Audio received. Now reply with an image and send !merge again.");
   }
 
-  
   if (mergeQueue[user].image && mergeQueue[user].audio) {
-    const outPath = path.join(tmpdir(), `merged_${Date.now()}.mp4`);
-    m.reply("🔄 Merging image and audio...");
+    ffprobe(mergeQueue[user].audio, (err, metadata) => {
+      if (err) {
+        console.error("FFprobe error:", err);
+        return m.reply("❌ Failed to read audio duration.");
+      }
 
-    ffmpeg()
-      .input(mergeQueue[user].image)
-      .loop()
-      .input(mergeQueue[user].audio)
-      .outputOptions(["-shortest", "-c:v libx264", "-c:a aac"])
-      .save(outPath)
-      .on("end", async () => {
-        const vid = fs.readFileSync(outPath);
-        await client.sendMessage(m.chat, { video: vid, mimetype: "video/mp4" }, { quoted: m });
+      const duration = metadata.format.duration;
+      const outPath = path.join(tmpdir(), `merged_${Date.now()}.mp4`);
 
-        
-        fs.unlinkSync(mergeQueue[user].image);
-        fs.unlinkSync(mergeQueue[user].audio);
-        fs.unlinkSync(outPath);
-        delete mergeQueue[user];
+      m.reply("🔄 Merging image and audio...");
 
-        await m.reply("✅ Merge complete. Video sent.");
-      })
-      .on("error", (err) => {
-        console.error("FFmpeg error:", err);
-        m.reply("❌ Failed to merge.");
-        delete mergeQueue[user];
-      });
+      ffmpeg()
+        .input(mergeQueue[user].image)
+        .loop()
+        .input(mergeQueue[user].audio)
+        .duration(duration)
+        .outputOptions([
+          "-c:v libx264",
+          "-preset veryfast",
+          "-tune stillimage",
+          "-c:a aac",
+          "-b:a 192k",
+          "-shortest",
+          "-movflags +faststart"
+        ])
+        .save(outPath)
+        .on("end", async () => {
+          const vid = fs.readFileSync(outPath);
+          await client.sendMessage(m.chat, { video: vid, mimetype: "video/mp4" }, { quoted: m });
+
+          fs.unlinkSync(mergeQueue[user].image);
+          fs.unlinkSync(mergeQueue[user].audio);
+          fs.unlinkSync(outPath);
+          delete mergeQueue[user];
+
+          await m.reply("✅ Merge complete. Video sent.");
+        })
+        .on("error", (err) => {
+          console.error("FFmpeg error:", err);
+          m.reply("❌ Failed to merge.");
+          delete mergeQueue[user];
+        });
+    });
   }
 });
