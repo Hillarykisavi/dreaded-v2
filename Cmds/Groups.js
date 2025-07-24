@@ -1,6 +1,7 @@
 const dreaded = global.dreaded;
 const middleware = require('../utility/botUtil/middleware');
-const { getBinaryNodeChild, getBinaryNodeChildren } = require('@whiskeysockets/baileys');
+const { getBinaryNodeChild, getBinaryNodeChildren, S_WHATSAPP_NET } = require('@whiskeysockets/baileys');
+
 
 dreaded({
   pattern: "add",
