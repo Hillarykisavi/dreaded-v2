@@ -394,31 +394,18 @@ dreaded({
   if (quotedMessage.imageMessage) {
     let imageCaption = quotedMessage.imageMessage.caption;
     let imageUrl = await client.downloadAndSaveMediaMessage(quotedMessage.imageMessage);
-    client.sendMessage(m.chat, {
-      image: { url: imageUrl },
-      caption: imageCaption,
-      quoted: m
-    });
+    await client.sendMessage(m.chat, { image: { url: imageUrl }, caption: imageCaption }, { quoted: m });
   }
 
   if (quotedMessage.videoMessage) {
     let videoCaption = quotedMessage.videoMessage.caption;
     let videoUrl = await client.downloadAndSaveMediaMessage(quotedMessage.videoMessage);
-    client.sendMessage(m.chat, {
-      video: { url: videoUrl },
-      caption: videoCaption,
-      quoted: m
-    });
+    await client.sendMessage(m.chat, { video: { url: videoUrl }, caption: videoCaption }, { quoted: m });
   }
 
   if (quotedMessage.audioMessage) {
     let audioUrl = await client.downloadAndSaveMediaMessage(quotedMessage.audioMessage);
-    client.sendMessage(m.chat, {
-      audio: { url: audioUrl },
-      mimetype: 'audio/ogg; codecs=opus',
-      ptt: true,
-      quoted: m
-    });
+    await client.sendMessage(m.chat, { audio: { url: audioUrl }, mimetype: 'audio/ogg; codecs=opus', ptt: true }, { quoted: m });
   }
 });
 
