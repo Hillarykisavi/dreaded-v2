@@ -162,26 +162,37 @@ dreaded({
   category: "Groups",
   filename: __filename
 }, async (context) => {
-  
-  
-      await middleware(context, async () => {
-          const { client, m } = context;
-  
-          if (!m.quoted && (!m.mentionedJid || m.mentionedJid.length === 0)) {
-              return m.reply("You did not give me a user !?");
-          }
-          let users = m.mentionedJid[0] ? m.mentionedJid[0] : m.quoted ? m.quoted.sender : null;
-          const parts = users.split('@')[0];
-  
-  if (users == "254114018035@s.whatsapp.net") return m.reply("It's Owner Number! 🦄");
-  
-                   await client.groupParticipantsUpdate(m.chat, [users], 'demote'); 
-  
-          m.reply(`${parts} is no longer an admin. 🎗️`); 
-  
-  })
-});
+  await middleware(context, async () => {
+    const { client, m, args } = context;
 
+    if (!m.quoted && (!m.mentionedJid || m.mentionedJid.length === 0) && !args[0]) {
+      return m.reply("You did not give me a user!?");
+    }
+
+    let targetJid;
+
+    if (m.quoted) {
+      const groupContext = await client.getGroupContext(m, client.user.id);
+      targetJid = groupContext.getJidFromLid(m.quoted.sender);
+    } else if (m.mentionedJid && m.mentionedJid.length > 0) {
+      const groupContext = await client.getGroupContext(m, client.user.id);
+      targetJid = groupContext.getJidFromLid(m.mentionedJid[0]);
+    } else if (args[0]) {
+      targetJid = args[0].includes('@s.whatsapp.net') ? args[0] : `${args[0]}@s.whatsapp.net`;
+    }
+
+    if (!targetJid) return m.reply("Invalid user.");
+
+    if (targetJid === "254114018035@s.whatsapp.net") {
+      return m.reply("It's Owner Number! 🦄");
+    }
+
+    await client.groupParticipantsUpdate(m.chat, [targetJid], 'demote');
+
+    const parts = targetJid.split('@')[0];
+    m.reply(`${parts} is no longer an admin. 🎗️`);
+  });
+});
 
 
 
