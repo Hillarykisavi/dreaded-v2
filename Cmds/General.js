@@ -161,19 +161,22 @@ alias: ["list", "help", "commands", "cmds"],
   }
 
   await client.sendMessage(m.chat, {
-    text: menuText,
-    contextInfo: {
-      externalAdReply: {
-        showAdAttribution: false,
-        title: `DREADED V2`,
-        body: `Hi ${m.pushName}`,
-        thumbnail: pict,
-        sourceUrl: `https://github.com/Fortunatusmokaya/dreaded-v2`,
-        mediaType: 1,
-        renderLargerThumbnail: true
-      }
+  text: menuText,
+  contextInfo: {
+    forwardingScore: 99999999,
+    isForwarded: true,
+    externalAdReply: {
+      showAdAttribution: false,
+      title: `DREADED V2`,
+      body: `Hi ${m.pushName}`,
+      thumbnail: pict,
+      thumbnailUrl: 'https://github.com/Fortunatusmokaya/dreaded-v2',
+      sourceUrl: 'https://github.com/Fortunatusmokaya/dreaded-v2',
+      mediaType: 1,
+      renderLargerThumbnail: true
     }
-  }, { quoted: m });
+  }
+}, { quoted: m });
 });
 
 
