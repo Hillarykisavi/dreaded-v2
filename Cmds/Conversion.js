@@ -2,6 +2,7 @@ const fs = require("fs");
 const ffmpeg = require("fluent-ffmpeg");
 const { tmpdir } = require("os");
 const path = require("path");
+const { exec } = require("child_process");
 
 dreaded({
   pattern: "toaudio",
