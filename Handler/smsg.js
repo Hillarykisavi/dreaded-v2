@@ -114,10 +114,12 @@ function smsg(conn, m, store) {
 
 
 m.reply = (text, chatId = m.chat, options = {}) => {
-  return conn.sendMessage(chatId, 
+  return conn.sendMessage(chatId,
     {
       text: text,
       contextInfo: {
+        forwardingScore: 9999999,
+        isForwarded: true,
         externalAdReply: {
           title: `DREADED V2`,
           body: m.pushName,
@@ -127,7 +129,7 @@ m.reply = (text, chatId = m.chat, options = {}) => {
           sourceUrl: 'https://github.com/Fortunatusmokaya/dreaded-v2'
         }
       }
-    }, 
+    },
     { quoted: m, ...options }
   );
 };
