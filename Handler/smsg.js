@@ -122,7 +122,7 @@ m.reply = (text, chatId = m.chat, options = {}) => {
           title: `DREADED V2`,
           body: m.pushName,
           previewType: "PHOTO",
-          thumbnailUrl: 'https://telegra.ph/file/c75efecf7f0aef851fc02.jpg', 
+          thumbnailUrl: 'https://github.com/Fortunatusmokaya/dreaded-v2', 
           thumbnail: kali, 
           sourceUrl: 'https://github.com/Fortunatusmokaya/dreaded-v2'
         }
