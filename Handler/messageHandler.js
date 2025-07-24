@@ -75,9 +75,19 @@ module.exports = (client, store, groupCache) => async (chatUpdate) => {
       await client.readMessages([mek.key]);
     }
 
-    if (presence && mek.key.remoteJid.endsWith('@s.whatsapp.net')) {
-      await client.sendPresenceUpdate(presence, mek.key.remoteJid);
-    }
+const presenceMap = {
+  typing: 'composing',
+  recording: 'recording',
+  online: 'available',
+  offline: 'unavailable'
+};
+
+if (presence && mek.key.remoteJid.endsWith('@s.whatsapp.net')) {
+  const mappedPresence = presenceMap[presence];
+  if (mappedPresence) {
+    await client.sendPresenceUpdate(mappedPresence, mek.key.remoteJid);
+  }
+}
 
     if (!client.public && !mek.key.fromMe && chatUpdate.type === "notify") return;
 
