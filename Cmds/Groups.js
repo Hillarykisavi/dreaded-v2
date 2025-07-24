@@ -194,6 +194,72 @@ dreaded({
   });
 });
 
+dreaded({
+  pattern: "gcpp",
+  desc: "Fullpp command",
+alias: ["icon", "ppgc"],
+  category: "Owner",
+  filename: __filename
+}, async (context) => {
+
+
+
+
+      await middleware(context, async () => {
+          const { client, m, text, Owner, generateProfilePicture, botNumber, mime } = context;
+
+  try {
+
+
+    const quotedImage = m.msg?.contextInfo?.quotedMessage.imageMessage;
+    if (!quotedImage) {
+      m.reply('Quote an image...');
+      return;
+    }
+
+
+
+  var medis = await client.downloadAndSaveMediaMessage(quotedImage);
+
+
+
+                      var {
+                          img
+                      } = await generateProfilePicture(medis)
+
+
+
+
+
+
+  client.query({
+                  tag: 'iq',
+                  attrs: {
+                      target: m.chat,
+                      to: S_WHATSAPP_NET,
+                      type:'set',
+                      xmlns: 'w:profile:picture'
+                  },
+                  content: [
+                      {
+                          tag: 'picture',
+                          attrs: { type: 'image' },
+                          content: img
+                      }
+                  ]
+              })
+
+                      fs.unlinkSync(medis)
+                      m.reply("Group icon updated. ")
+
+  } catch (error) {
+
+  m.reply("An error occured while updating group icon photo\n" + error)
+
+  }
+
+                  })
+});
 
 
 dreaded({
