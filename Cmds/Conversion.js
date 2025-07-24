@@ -75,7 +75,7 @@ dreaded({
     })
     .on("error", err => {
       console.error(err);
-      m.reply("❌ Failed to trim media.");
+      m.reply("❌ Failed to trim media.\n" + err);
     })
     .run();
 });
