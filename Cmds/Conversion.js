@@ -37,13 +37,15 @@ dreaded({
     .save(outputPath);
 });
 
+
+
 dreaded({
   pattern: "trim",
   desc: "Trim quoted video/audio",
   category: "Conversion",
   filename: __filename
 }, async ({ client, m, text }) => {
-  const args = text.split(" ");
+  const args = text.trim().split(" ");
   const start = parseInt(args[0]);
   const end = parseInt(args[1]);
 
@@ -54,8 +56,11 @@ dreaded({
     return m.reply("❌ Usage: trim <start> <end>. Example: !trim 5 10");
 
   const mediaBuffer = await m.quoted.download();
-  const input = path.join(tmpdir(), `input_${Date.now()}.dat`);
-  const output = path.join(tmpdir(), `output_${Date.now()}.dat`);
+  const isVideo = m.quoted.mtype === "videoMessage";
+  const ext = isVideo ? "mp4" : "mp3";
+
+  const input = path.join(tmpdir(), `input_${Date.now()}.${ext}`);
+  const output = path.join(tmpdir(), `output_${Date.now()}.${ext}`);
   fs.writeFileSync(input, mediaBuffer);
 
   ffmpeg(input)
@@ -64,18 +69,18 @@ dreaded({
     .output(output)
     .on("end", async () => {
       const outBuffer = fs.readFileSync(output);
-      const isVideo = m.quoted.mtype === "videoMessage";
       await client.sendMessage(m.chat, {
         [isVideo ? "video" : "audio"]: outBuffer,
         mimetype: isVideo ? "video/mp4" : "audio/mp4",
         ptt: !isVideo
       }, { quoted: m });
+
       fs.unlinkSync(input);
       fs.unlinkSync(output);
     })
     .on("error", err => {
       console.error(err);
-      m.reply("❌ Failed to trim media.\n" + err);
+      m.reply("❌ Failed to trim media.");
     })
     .run();
 });
