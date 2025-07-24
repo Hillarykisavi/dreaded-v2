@@ -31,7 +31,7 @@ dreaded({
     })
     .on("error", async (err) => {
       console.error("FFmpeg error:", err);
-      await client.sendMessage(m.chat, { text: "❌ Failed to convert video to audio." }, { quoted: m });
+      await client.sendMessage(m.chat, { text: "Failed to convert video to audio." }, { quoted: m });
       if (fs.existsSync(inputPath)) fs.unlinkSync(inputPath);
     })
     .save(outputPath);
@@ -50,10 +50,10 @@ dreaded({
   const end = parseInt(args[1]);
 
   if (!m.quoted || !["videoMessage", "audioMessage"].includes(m.quoted.mtype))
-    return m.reply("❌ Reply to a video or audio to trim.");
+  return m.reply("❌ Please reply to a video or audio message that you want to trim.\n\nExample:\nReply to a video and send:\n*trim 1 4*\nThis will cut the media from 1s to 4s.");
 
-  if (isNaN(start) || isNaN(end) || end <= start)
-    return m.reply("❌ Usage: trim <start> <end>. Example: !trim 5 10");
+if (isNaN(start) || isNaN(end) || end <= start)
+  return m.reply("❌ Invalid time range.\n\nCorrect format:\n*trim <start> <end>*\nExample: *trim 1 4*\nThis means the trimmed media will start at 1 second and end at 4 seconds.");
 
   const mediaBuffer = await m.quoted.download();
   const isVideo = m.quoted.mtype === "videoMessage";
@@ -121,7 +121,7 @@ dreaded({
     })
     .on("error", err => {
       console.error(err);
-      m.reply("❌ Failed to convert.");
+      m.reply("❌ Failed to convert. Input might be large");
     });
 });
 
@@ -161,4 +161,48 @@ dreaded({
   } catch (err) {
     await client.sendMessage(m.chat, { text: "❌ Failed to convert sticker to image." }, { quoted: m });
   }
+});
+
+
+dreaded({
+  pattern: "togif",
+  desc: "Convert animated sticker or short video (<=10s) to GIF",
+  category: "Conversion",
+  filename: __filename
+}, async ({ client, m }) => {
+  if (!m.quoted || !["stickerMessage", "videoMessage"].includes(m.quoted.mtype))
+    return m.reply("❌ Reply to an *animated sticker* or a *short video* (max 10s).");
+
+  const isSticker = m.quoted.mtype === "stickerMessage";
+  const isVideo = m.quoted.mtype === "videoMessage";
+
+  if (isSticker && !m.quoted.message.isAnimated)
+    return m.reply("This sticker is static. Only *animated* stickers are supported.");
+
+  if (isVideo && m.quoted.seconds > 10)
+    return m.reply("Only videos of 10 seconds or less are supported.");
+
+  const media = await m.quoted.download();
+  const inputPath = path.join(tmpdir(), `input_${Date.now()}`);
+  const outputPath = path.join(tmpdir(), `output_${Date.now()}.gif`);
+
+  fs.writeFileSync(inputPath, media);
+
+  ffmpeg(inputPath)
+    .outputOptions("-vf", "fps=10,scale=320:-1:flags=lanczos")
+    .outputOptions("-loop", "0")
+    .toFormat("gif")
+    .on("end", async () => {
+      const gifBuffer = fs.readFileSync(outputPath);
+      await client.sendMessage(m.chat, { video: gifBuffer, mimetype: "image/gif", gifPlayback: true }, { quoted: m });
+      fs.unlinkSync(inputPath);
+      fs.unlinkSync(outputPath);
+    })
+    .on("error", err => {
+      console.error(err);
+      m.reply("Failed to convert to GIF." + err);
+      fs.existsSync(inputPath) && fs.unlinkSync(inputPath);
+      fs.existsSync(outputPath) && fs.unlinkSync(outputPath);
+    })
+    .save(outputPath);
 });
