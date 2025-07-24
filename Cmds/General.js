@@ -277,16 +277,17 @@ dreaded({
     ppUrl = "https://telegra.ph/file/95680cd03e012bb08b9e6.jpg";
   }
 
-  let status;
+  let about;
   try {
-    status = await client.fetchStatus(sender);
+    const statusArr = await client.fetchStatus(sender);
+    about = statusArr[0]?.status?.status || "No about/status message.";
   } catch {
-    status = { status: "About not accessible due to user privacy" };
+    about = "About not accessible due to user privacy";
   }
 
   const mess = {
     image: { url: ppUrl },
-    caption: `Name: ${name}\nAbout:\n${status.status}`,
+    caption: `Name: ${name}\nAbout:\n${about}`,
     ...(m.quoted ? { mentions: [sender] } : {})
   };
 
